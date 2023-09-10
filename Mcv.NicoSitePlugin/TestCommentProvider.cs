@@ -285,6 +285,7 @@ check:
                         }
                         var userId = chat.UserId;
                         string? newNickname = null;
+                        var thumbNailUrl = GetThumbnail(userId);
                         //var comment = await Tools.CreateNicoComment(chat, user, _siteOptions, roomName, async userid => await API.GetUserInfo(_dataSource, userid), _logger);
                         INicoMessage comment;
                         if (IsAd(chat))
@@ -378,17 +379,6 @@ check:
                             if (IsDisconnect(chat))//NicoCommentではなく専用のクラスを作っても良いかも。
                             {
                                 _chatProvider?.Disconnect();
-                            }
-                            string username;
-                            if (IsRawUserId(chat.UserId) && chat.UserId != SystemUserId && _siteOptions.IsAutoGetUsername)
-                            {
-                                var userInfo = await Api.GetUserInfo(_server, _cc, chat.UserId);
-                                username = userInfo.Nickname;
-                            }
-                            else
-                            {
-                                username = null;
-                            }
                             }
                             if (_siteOptions.IsAutoSetNickname)
                             {
