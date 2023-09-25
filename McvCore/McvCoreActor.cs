@@ -1,18 +1,19 @@
-﻿using PluginV2 = Mcv.PluginV2;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Mcv.PluginV2;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
-using Mcv.PluginV2.Messages;
-using Mcv.Core.V1;
-using System.Diagnostics;
-using Akka.Actor;
-using System.Threading;
-using Mcv.Core.PluginActorMessages;
+﻿using Akka.Actor;
 using Mcv.Core.CoreActorMessages;
+using Mcv.Core.PluginActorMessages;
+using Mcv.Core.V1;
+using Mcv.PluginV2;
+using Mcv.PluginV2.Messages;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace Mcv.Core;
 
@@ -74,6 +75,7 @@ class McvCoreActor : ReceiveActor
     public McvCoreActor()
     {
         _self = Self;
+        _appDirPath = AppContext.BaseDirectory;
         var io = new IOTest();
         _pluginManager = Context.ActorOf(PluginManagerActor.Props());
 
@@ -208,8 +210,130 @@ class McvCoreActor : ReceiveActor
             case SetDirectMessage directMsg:
                 SetMessageToPluginManager(directMsg.Target, directMsg.Message);
                 break;
+            case RequestUpdate updateToLatest:
+                {
+                    await DownloadFileAsync(updateToLatest.Url, _zipFilePath);
+
+                    //list.txtに記載されているファイル全てに.oldを付加            
+                    try
+                    {
+                        var list = new List<string>();
+                        using (var sr = new System.IO.StreamReader(System.IO.Path.Combine(_appDirPath, "list.txt")))
+                        {
+                            while (!sr.EndOfStream)
+                            {
+                                var filename = sr.ReadLine();
+                                if (!string.IsNullOrEmpty(filename))
+                                    list.Add(filename);
+                            }
+                        }
+                        foreach (var filename in list)
+                        {
+                            if (filename.StartsWith("System.IO.Compression"))
+                            {
+                                continue;
+                            }
+                            var srcPath = System.IO.Path.Combine(_appDirPath, filename);
+                            var dstPath = System.IO.Path.Combine(_appDirPath, filename + ".old");
+                            try
+                            {
+                                if (System.IO.File.Exists(srcPath))
+                                {
+                                    System.IO.File.Delete(dstPath);//If the file to be deleted does not exist, no exception is thrown.
+                                    System.IO.File.Move(srcPath, dstPath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogException(ex, "", $"src={srcPath}, dst={dstPath}");
+                            }
+                        }
+                    }
+                    catch (System.IO.FileNotFoundException ex)
+                    {
+                        _logger.LogException(ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogException(ex);
+                    }
+                    try
+                    {
+                        ExtractZipFile(_zipFilePath, _appDirPath);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+
+                    try
+                    {
+                        var exeFile = Process.GetCurrentProcess().MainModule!.FileName!;
+                        var pid = Process.GetCurrentProcess().Id;
+                        System.Diagnostics.Process.Start(exeFile, "/updated " + pid);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogException(ex);
+                        return;
+                    }
+                    try
+                    {
+                        Process.GetCurrentProcess().Kill();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogException(ex);
+                    }
+                }
+                break;
         }
     }
+    private async Task DownloadFileAsync(string url, string destPath)
+    {
+        //var client = new HttpClient();
+        var client = new HttpClientDownloadWithProgress(url, destPath);
+        client.ProgressChanged += HttpClient_ProgressChanged;
+        await client.StartDownload();
+        //var res = await client.GetAsync(url);
+        //using var sr = await res.Content.ReadAsStreamAsync();
+        //using var fs = new FileStream(destPath, FileMode.Create);
+        //await sr.CopyToAsync(fs);
+    }
+    private void HttpClient_ProgressChanged(object? sender, ProgressChangedEventArgs e)
+    {
+        var message = new NotifyDownloadProgress($"{e.ProgressPercentage}, {e.TotalBytesDownloaded} / {e.TotalFileSize}");
+        SetMessageToPluginManager(message);
+    }
+    private static void ExtractZipFile(string zipFilePath, string appDirPath)
+    {
+        try
+        {
+            using var archive = ZipFile.OpenRead(zipFilePath);
+            foreach (var entry in archive.Entries)
+            {
+                var entryPath = Path.Combine(appDirPath, entry.FullName);
+                var entryDir = Path.GetDirectoryName(entryPath);
+                if (entryDir is not null && !Directory.Exists(entryDir))
+                {
+                    Directory.CreateDirectory(entryDir);
+                }
+
+                var entryFn = Path.GetFileName(entryPath);
+                if (!string.IsNullOrEmpty(entryFn))
+                {
+                    entry.ExtractToFile(entryPath, true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogException(ex);
+        }
+    }
+
+    private readonly string _zipFilePath = "latest.zip";
+    private readonly string _appDirPath = "";
     internal async Task SetMessageAsync(INotifyMessageV2 message)
     {
         switch (message)
@@ -272,8 +396,48 @@ class McvCoreActor : ReceiveActor
                 {
                     return new ReplyPluginSettingsDirPath(GetSettingsFilePath(pluginSettingsDirPath.FilePath));
                 }
+            case GetIfUpdateExists _:
+                {
+                    var (version, url) = await GetLatestVersionInfo(GetAppDirName(), GetUserAgent());
+                    return new ReplyIfUpdateExists(IsNewer(GetAppVersion(), version), url, GetAppVersion(), version);
+                }
         }
         throw new Exception("bug");
+    }
+
+    private static bool IsNewer(string current, string target)
+    {
+        return true;
+        //return ToVersion(current) < ToVersion(target);
+    }
+    private static Version ToVersion(string versionStr)
+    {
+        //正規表現を使ってバージョン文字列をパースする
+        var match = Regex.Match(versionStr, "^(\\d+)\\.(\\d+)\\.(\\d+)");
+        if (match.Success)
+        {
+            return new Version(int.Parse(match.Groups[1].Value), int.Parse(match.Groups[2].Value), int.Parse(match.Groups[3].Value));
+        }
+        throw new NotImplementedException();
+    }
+
+    public static async Task<(string version, string url)> GetLatestVersionInfo(string name, string userAgent)
+    {
+        name = name.ToLower();
+        //APIが確定するまでアダプタを置いている。ここから本当のAPIを取得する。
+        var permUrl = @"https://ryu-s.github.io/" + name + "_latest";
+
+        dynamic? d = null;
+        using (var client = new System.Net.Http.HttpClient())
+        {
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
+            var api = await client.GetStringAsync(permUrl);
+            var jsonStr = await client.GetStringAsync(api);
+            d = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonStr);
+        }
+        var version = (string)d.version;
+        var url = (string)d.url;
+        return (version, url);
     }
     internal void SavePluginOptions(string pluginName, string pluginOptionsRaw)
     {
@@ -427,15 +591,27 @@ class McvCoreActor : ReceiveActor
     }
     internal static string GetAppSolutionConfiguration()
     {
-        string s;
+        string s = "";
 #if BETA
-            s = "ベータ版";
+        s = "ベータ版";
 #elif ALPHA
-            s = "アルファ版";
+        s = "アルファ版";
 #elif DEBUG
         s = "DEBUG";
 #endif
         return s;
+    }
+    internal static string GetAppDirName()
+    {
+        var Name = GetAppName();
+#if BETA
+        return Name + "_Beta";
+#elif Alpha
+        return Name + "_Alpha";
+#else
+        return Name;
+#endif
+
     }
     private static string GetUserAgent()
     {
@@ -443,7 +619,7 @@ class McvCoreActor : ReceiveActor
     }
     private string GetSitePluginOptionsPath()
     {
-        return Path.Combine(AppContext.BaseDirectory, "settings", "options.txt");
+        return Path.Combine(_appDirPath, "settings", "options.txt");
     }
 
     internal void ChangeConnectionStatus(IConnectionStatusDiff connStDiff)
@@ -488,4 +664,3 @@ class McvCoreActor : ReceiveActor
         return Akka.Actor.Props.Create(() => new McvCoreActor()).WithDispatcher("akka.actor.synchronized-dispatcher");
     }
 }
-

@@ -10,12 +10,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
 namespace Mcv.MainViewPlugin
 {
@@ -96,6 +98,108 @@ namespace Mcv.MainViewPlugin
         }
 
         public UserListViewModel UserListVm { get; }
+    }
+    internal class SuggestToUpdateViewCloseMessage : RequestMessage<string> { }
+    internal class ShowSuggestToUpdateViewMessage : RequestMessage<string>
+    {
+        public ShowSuggestToUpdateViewMessage(SuggestToUpdateViewModel vm)
+        {
+            Vm = vm;
+        }
+
+        public SuggestToUpdateViewModel Vm { get; }
+    }
+    class SuggestToUpdateViewModel : ViewModelBase, INotifyPropertyChanged
+    {
+        private readonly IAdapter _adapter;
+        private string _log;
+
+        public SuggestToUpdateViewModel()
+        {
+            if (!DesignModeUtils.IsDesignMode)
+            {
+                throw new NotSupportedException();
+            }
+            Url = "URL";
+            CurrentVersion = "1.2.3";
+            LatestVersion = "7.8.9";
+            OkCommand = new RelayCommand(() => { });
+            CancelCommand = new RelayCommand(() => { });
+            _adapter = default!;
+            _log = "LOG";
+        }
+        public SuggestToUpdateViewModel(string url, string current, string latest, IAdapter adapter)
+        {
+            Url = url;
+            CurrentVersion = current;
+            LatestVersion = latest;
+            _adapter = adapter;
+            OkCommand = new RelayCommand(Ok);
+            CancelCommand = new RelayCommand(Cancel);
+            adapter.UpdateProgressChanged += (s, e) =>
+            {
+                Log = e.Message;
+            };
+        }
+
+        public string Url { get; }
+        public string CurrentVersion { get; }
+        public string LatestVersion { get; }
+        public ICommand OkCommand { get; }
+        public ICommand CancelCommand { get; }
+        public string Log
+        {
+            get
+            {
+                return _log;
+            }
+            set
+            {
+                _log = value;
+                RaisePropertyChanged();
+            }
+        }
+        private void Ok()
+        {
+            try
+            {
+                _adapter.RequestUpdate(LatestVersion, Url);
+            }
+            catch (Exception ex)
+            {
+                _adapter.SetException(ex);
+            }
+        }
+        private void Cancel()
+        {
+            WeakReferenceMessenger.Default.Send(new SuggestToUpdateViewCloseMessage());
+        }
+    }
+    class DownloadViewModel : ViewModelBase, INotifyPropertyChanged
+    {
+        private readonly IAdapter _adapter;
+        private string _log;
+        public DownloadViewModel()
+        {
+            _log = "TEST";
+        }
+        public DownloadViewModel(IAdapter adapter)
+        {
+            Log = "";
+            _adapter = adapter;
+        }
+        public string Log
+        {
+            get
+            {
+                return _log;
+            }
+            set
+            {
+                _log = value;
+                RaisePropertyChanged();
+            }
+        }
     }
     class DesignTimeComment : IMcvCommentViewModel
     {
@@ -564,9 +668,22 @@ namespace Mcv.MainViewPlugin
         {
             return _browserDict[id];
         }
+        private void ShowSuggestToUpdateView(string url, string current, string latest)
+        {
+            WeakReferenceMessenger.Default.Send(new ShowSuggestToUpdateViewMessage(new SuggestToUpdateViewModel(url, current, latest, _adapter)));
+        }
         private async Task CheckIfUpdateExists(bool isAutoCheck)
         {
-            await Task.CompletedTask;
+            var (updateExists, url, current, latest) = await _adapter.CheckIfUpdateExistsAsync();
+            if (updateExists)
+            {
+                //更新があります。と表示する
+                ShowSuggestToUpdateView(url, current, latest);
+            }
+            else if (!isAutoCheck)
+            {
+                //最新バージョンをお使いです。と表示する
+            }
         }
         #endregion //Methods
         public void RequestClose()
@@ -795,6 +912,10 @@ namespace Mcv.MainViewPlugin
                 {
                     _users.Remove(user);
                 }
+            };
+            _adapter.SuggestToUpdateEvent += (_, e) =>
+            {
+                ShowSuggestToUpdateView(e.Url, e.CurrentVersion, e.LatestVersion);
             };
             //_settingsContext = settingsContext;
             //settingsContext.Applied += (s, e) =>

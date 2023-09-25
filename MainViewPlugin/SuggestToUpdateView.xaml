@@ -1,0 +1,27 @@
+﻿<Window x:Class="Mcv.MainViewPlugin.SuggestToUpdateView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Mcv.MainViewPlugin"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance local:SuggestToUpdateViewModel, IsDesignTimeCreatable=True}"
+        Title="SuggestToUpdateView" Height="465" Width="740">
+    <Grid>
+        <Grid Margin="137,164,125,195" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Label x:Name="labelCurrentVersion" Content="{Binding CurrentVersion}" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0" />
+            <Label x:Name="labelLatestVersion" Content="{Binding LatestVersion}" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="2"/>
+            <Label x:Name="labelArrow" Content="→" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" />
+        </Grid>
+
+        <Button x:Name="btnOk" Content="はい" Command="{Binding OkCommand}" HorizontalAlignment="Left" Margin="125,324,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnCancel" Content="いいえ" Command="{Binding CancelCommand}" HorizontalAlignment="Left" Margin="370,324,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="label" Content="{Binding Log}" HorizontalAlignment="Left" Margin="118,284,0,0" VerticalAlignment="Top"/>
+
+    </Grid>
+</Window>

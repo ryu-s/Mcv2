@@ -73,6 +73,9 @@ public class MainViewPlugin : IPlugin
                     await OnPluginAdded(pluginAdded.PluginId, pluginAdded.PluginName, pluginAdded.PluginRole);
                 }
                 break;
+            case NotifyDownloadProgress progress:
+                //_adapter.OnDownloadProgress(progress);
+                break;
         }
     }
     private Task OnPluginAdded(IPluginInfo pluginInfo)
@@ -130,6 +133,13 @@ public class MainViewPlugin : IPlugin
                         DataContext = _vm
                     };
                     _v.Show();
+                    //アップデートがあるか確認する
+                    var (updateExists, url, current, latest) = await _adapter.CheckIfUpdateExistsAsync();
+                    if (updateExists)
+                    {
+                        //ユーザーにアップデートがあることを伝え、アップデートするか聞く
+                        _adapter.SuggestToUpdate(url, current, latest);
+                    }
                 }
                 break;
             case SetClosing _:

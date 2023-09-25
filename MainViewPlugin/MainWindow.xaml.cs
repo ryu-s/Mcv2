@@ -95,6 +95,20 @@ namespace Mcv.MainViewPlugin
                     Debug.WriteLine(ex.Message);
                 }
             });
+            WeakReferenceMessenger.Default.Register<ShowSuggestToUpdateViewMessage>(this, (r, m) =>
+            {
+                try
+                {
+                    var v = new SuggestToUpdateView();
+                    v.DataContext = m.Vm;
+                    //v.Owner = this;
+                    v.Show();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            });
         }
 
         /// <summary>

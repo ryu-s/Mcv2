@@ -124,20 +124,44 @@ namespace Mcv.MainViewPlugin
 
         public string UserId { get; }
     }
+    class SuggestToUpdateEventArgs : EventArgs
+    {
+        public SuggestToUpdateEventArgs(string url, string currentVersion, string latestVersion)
+        {
+            Url = url;
+            CurrentVersion = currentVersion;
+            LatestVersion = latestVersion;
+        }
+
+        public string Url { get; }
+        public string CurrentVersion { get; }
+        public string LatestVersion { get; }
+    }
+    class UpdateProgressChangedEventArgs : EventArgs
+    {
+        public UpdateProgressChangedEventArgs(string message)
+        {
+            Message = message;
+        }
+
+        public string Message { get; }
+    }
     class IAdapter : IConnectionNameHost
     {
-        public event EventHandler<ConnectionAddedEventArgs> ConnectionAdded;
-        public event EventHandler<ConnectionRemovedEventArgs> ConnectionRemoved;
-        public event EventHandler<ConnectionStatusChangedEventArgs> ConnectionStatusChanged;
-        public event EventHandler<SiteAddedEventArgs> SiteAdded;
-        public event EventHandler<BrowserAddedEventArgs> BrowserAdded;
-        public event EventHandler<BrowserRemovedEventArgs> BrowserRemoved;
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<MetadataUpdatedEventArgs> MetadataUpdated;
+        public event EventHandler<ConnectionAddedEventArgs>? ConnectionAdded;
+        public event EventHandler<ConnectionRemovedEventArgs>? ConnectionRemoved;
+        public event EventHandler<ConnectionStatusChangedEventArgs>? ConnectionStatusChanged;
+        public event EventHandler<SiteAddedEventArgs>? SiteAdded;
+        public event EventHandler<BrowserAddedEventArgs>? BrowserAdded;
+        public event EventHandler<BrowserRemovedEventArgs>? BrowserRemoved;
+        public event EventHandler<MessageReceivedEventArgs>? MessageReceived;
+        public event EventHandler<MetadataUpdatedEventArgs>? MetadataUpdated;
         public event PropertyChangedEventHandler? PropertyChanged;
-        public event EventHandler<SelectedSiteChangedEventArgs> SelectedSiteChanged;
-        public event EventHandler<UserAddedEventArgs> UserAdded;
-        public event EventHandler<UserRemovedEventArgs> UserRemoved;
+        public event EventHandler<SelectedSiteChangedEventArgs>? SelectedSiteChanged;
+        public event EventHandler<UserAddedEventArgs>? UserAdded;
+        public event EventHandler<UserRemovedEventArgs>? UserRemoved;
+        public event EventHandler<SuggestToUpdateEventArgs>? SuggestToUpdateEvent;
+        public event EventHandler<UpdateProgressChangedEventArgs>? UpdateProgressChanged;
 
         private readonly BrowserProfileId _emptyBrowserProfileId = new(Guid.NewGuid());
         private readonly UserStore _userStore = new();
@@ -702,6 +726,30 @@ namespace Mcv.MainViewPlugin
         private void UserStore_UserAdded(object? sender, UserAddedEventArgs e)
         {
             UserAdded?.Invoke(this, e);
+        }
+
+        internal async Task<(bool updateExists, string url, string current, string latest)> CheckIfUpdateExistsAsync()
+        {
+            var res = await _host.RequestMessageAsync(new GetIfUpdateExists()) as ReplyIfUpdateExists;
+            if (res is null)
+            {
+                throw new NotImplementedException();
+            }
+            return (res.UpdateExists, res.Url, res.Current, res.Latest);
+        }
+
+        internal void SuggestToUpdate(string url, string current, string latest)
+        {
+            SuggestToUpdateEvent?.Invoke(this, new SuggestToUpdateEventArgs(url, current, latest));
+        }
+
+        internal void RequestUpdate(string latest, string url)
+        {
+            _host.SetMessageAsync(new RequestUpdate(latest, url));
+        }
+
+        internal void SetException(Exception ex)
+        {
         }
     }
 }
