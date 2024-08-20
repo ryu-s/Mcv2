@@ -111,6 +111,11 @@ class McvCoreActor : ReceiveActor
     private readonly IActorRef _self;
     public McvCoreActor()
     {
+        //System.Data.SQLite.Coreのバージョンが1.0.118のの時にSingleFileでPublishするとNullReferenceExceptionが発生する。
+        //下記コードを追加することで回避できるらしい。
+        //https://www.sqlite.org/forum/forumpost/66a0d2716a
+        System.Environment.SetEnvironmentVariable("SQLite_NoConfigure", "1");
+
         _self = Self;
         _appDirPath = AppContext.BaseDirectory;
         var io = new IOTest();
