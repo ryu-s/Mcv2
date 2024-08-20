@@ -17,6 +17,40 @@ using System.Windows;
 
 namespace Mcv.Core;
 
+class LogData
+{
+    public string Message { get; set; }
+    public DateTime DateTime { get; set; } = DateTime.Now;
+    public LogData(string message)
+    {
+        Message = message;
+    }
+}
+class Logger
+{
+    List<LogData> _logs = new();
+    public void Log(string message)
+    {
+        _logs.Add(new LogData(message));
+        WriteFile("log2.txt");
+    }
+    public void LogException(Exception ex, string message = "", string? detail = null)
+    {
+        Log($"Exception: {message} {ex.Message} {ex.StackTrace} {detail}");
+    }
+    public void WriteFile(string filename)
+    {
+        using (var sw = new StreamWriter(filename, true))
+        {
+            foreach (var log in _logs)
+            {
+                sw.WriteLine($"{log.DateTime} {log.Message}");
+                sw.WriteLine("=======================");
+            }
+        }
+        _logs.Clear();
+    }
+}
 class McvCoreActor : ReceiveActor
 {
     private readonly ConnectionManager _connManager;
@@ -26,6 +60,7 @@ class McvCoreActor : ReceiveActor
     private static readonly string MainViewPluginOptionsPath = Path.Combine("settings", "MainViewPlugin.txt");
     private static readonly ILogger _logger = new LoggerTest();
     private IMcvCoreOptions _coreOptions = default!;
+    private static readonly Logger _coreLogger = new();
     private void SetMessageToPluginManager(ISetMessageToPluginV2 message)
     {
         _pluginManager.Tell(new SetSetToAllPlugin(message));
@@ -67,6 +102,8 @@ class McvCoreActor : ReceiveActor
         SetMessageToPluginManager(new SetClosing());
 
         _userStoreManager.Save();
+
+        _coreLogger.WriteFile("log.txt");
 
         //ここで直接Context.System.Terminate()したいけど、できないから自分にメッセージを送る
         _self.Tell(new SystemShutDown());
@@ -138,16 +175,19 @@ class McvCoreActor : ReceiveActor
 
                         SetMessageToPluginManager(pluginHello.PluginId, new NotifyConnectionStatusList(_connManager.GetConnectionStatusList()));
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        _coreLogger.LogException(ex);
                         success = false;
                     }
                     if (!success)
                     {
                         //rollback
+                        _coreLogger.Log($"PluginAdded failed: {pluginHello.PluginName}");
                         RemovePlugin(pluginHello.PluginId);
                     }
                     SetMessageToPluginManager(pluginHello.PluginId, new SetLoaded());
+                    _coreLogger.Log($"PluginAdded: {pluginHello.PluginName}");
                     SetMessageToPluginManager(new NotifyPluginAdded(pluginHello.PluginId, pluginHello.PluginName, pluginHello.PluginRole));
                 }
                 break;
@@ -193,6 +233,7 @@ class McvCoreActor : ReceiveActor
                 ChangeConnectionStatus(connStDiffMsg.ConnStDiff);
                 break;
             case RequestAddConnection _:
+                _coreLogger.Log("RequestAddConnection");
                 await AddConnection();
                 break;
             case RequestShowSettingsPanel reqShowSettingsPanel:
@@ -557,11 +598,18 @@ class McvCoreActor : ReceiveActor
         var defaultSite = await GetDefaultSite();
         if (defaultSite is null)
         {
-            Debug.WriteLine("siteが無い");
+            _coreLogger.Log("siteが無い");
+            var k = await _pluginManager.Ask<List<IPluginInfo>>(new GetPluginList());
+            if (k is not null)
+            {
+                var plugins = k.Where(p => PluginTypeChecker.IsSitePlugin(p.Roles)).ToList().Select(k => k.Name);
+                var s = string.Join(",", plugins);
+                _coreLogger.Log(s);
+            }
+
             return;
         }
         var connId = _connManager.AddConnection(defaultSite);
-
         _userCommentCountManager.AddConnection(connId);
     }
 
