@@ -731,7 +731,11 @@ namespace Mcv.MainViewPlugin
             var name = await GetAppName();
             var version = await GetVersionNumber();
             var conf = await GetAppSolutionConfiguration();
-            var title = $"{name} v{version} ({conf})";
+            var title = $"{name} v{version}";
+            if (string.IsNullOrEmpty(title))
+            {
+                title += $" ({conf})";
+            }
             if (title != _title)
             {
                 _title = title;
