@@ -392,7 +392,7 @@ public class GridLengthConverter : IValueConverter
 }
 public class ColorBrushConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is Color color)
         {

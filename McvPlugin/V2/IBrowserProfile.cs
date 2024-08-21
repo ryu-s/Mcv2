@@ -8,6 +8,6 @@ public interface IBrowserProfile
     string Path { get; }
     string ProfileName { get; }
     BrowserType Type { get; }
-    Cookie GetCookie(string domain, string name);
+    Cookie? GetCookie(string domain, string name);
     List<Cookie> GetCookieCollection(string domain);
 }

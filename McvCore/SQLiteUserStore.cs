@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Mcv.PluginV2;
 
 namespace Mcv.Core.V1
@@ -16,7 +17,7 @@ namespace Mcv.Core.V1
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, McvUser> _cacheDict = new();
         private static readonly object _createTableLockObject = new object();
-        public event EventHandler<McvUser> UserAdded;
+        public event EventHandler<McvUser>? UserAdded;
         public void Load()
         {
             foreach (var user in LoadAllUserInfo())
@@ -41,7 +42,7 @@ namespace Mcv.Core.V1
             }
 
             //TODO:最初にデータベース上のユーザ情報を全てメモリに読み込むべきでは？その方が絶対に効率がいい。
-            if (TryGet(userId, out McvUser userInfo))
+            if (TryGet(userId, out McvUser? userInfo))
             {
                 AddUser(userInfo);
                 return userInfo;
@@ -80,6 +81,7 @@ namespace Mcv.Core.V1
                                 var userId = reader.GetString(0);
                                 string json = reader.GetString(1);
                                 var user = FromJson(json);
+                                if (user is null) continue;
                                 var update = reader.GetDateTime(2);
                                 list.Add(user);
                             }
@@ -379,7 +381,8 @@ namespace Mcv.Core.V1
         {
             return TryGet(userId, out var userInfo);
         }
-        private bool TryGet(string userId, out McvUser userInfo)
+
+        private bool TryGet(string userId, [NotNullWhen(true)] out McvUser? userInfo)
         {
             CreateDB(_dbPath);
 
@@ -409,6 +412,7 @@ namespace Mcv.Core.V1
                             //どうせ使っていないから削除したいけど、原因不明だからとりあえずコメントアウト
                             //var update = reader.GetDateTime(1);
                             userInfo = FromJson(json);
+                            if (userInfo is null) return false;//例外を投げたほうがいいか？
                             return true;
                         }
                     }

@@ -17,6 +17,11 @@ using System.Windows;
 
 namespace Mcv.Core;
 
+enum LogType
+{
+    Error,
+    Debug,
+}
 class LogData
 {
     public string Message { get; set; }
@@ -32,7 +37,6 @@ class Logger
     public void Log(string message)
     {
         _logs.Add(new LogData(message));
-        WriteFile("log2.txt");
     }
     public void LogException(Exception ex, string message = "", string? detail = null)
     {
@@ -309,7 +313,7 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-
+                        _coreLogger.LogException(ex);
                     }
 
                     try
@@ -444,8 +448,24 @@ class McvCoreActor : ReceiveActor
                 }
             case GetIfUpdateExists _:
                 {
-                    var (version, url) = await GetLatestVersionInfo(GetAppDirName(), GetUserAgent());
-                    return new ReplyIfUpdateExists(IsNewer(GetAppVersion(), version), url, GetAppVersion(), version);
+                    string? version = null;
+                    string? url = null;
+                    try
+                    {
+                        (version, url) = await GetLatestVersionInfo(GetAppDirName(), GetUserAgent());
+                    }
+                    catch (Exception ex)
+                    {
+                        _coreLogger.LogException(ex);
+                    }
+                    if (version is not null && url is not null)
+                    {
+                        return new ReplyIfUpdateExists(IsNewer(GetAppVersion(), version), url, GetAppVersion(), version);
+                    }
+                    else
+                    {
+                        return new ReplyIfUpdateExistsError();
+                    }
                 }
         }
         throw new Exception("bug");
@@ -453,8 +473,7 @@ class McvCoreActor : ReceiveActor
 
     private static bool IsNewer(string current, string target)
     {
-        return true;
-        //return ToVersion(current) < ToVersion(target);
+        return ToVersion(current) < ToVersion(target);
     }
     private static Version ToVersion(string versionStr)
     {
@@ -473,13 +492,18 @@ class McvCoreActor : ReceiveActor
         //APIが確定するまでアダプタを置いている。ここから本当のAPIを取得する。
         var permUrl = @"https://ryu-s.github.io/" + name + "_latest";
 
-        dynamic? d = null;
-        using (var client = new System.Net.Http.HttpClient())
+        using var client = new System.Net.Http.HttpClient();
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
+        var api = await client.GetStringAsync(permUrl);
+        var jsonStr = await client.GetStringAsync(api);
+        dynamic? d = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonStr);
+        if (d is null)
         {
-            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
-            var api = await client.GetStringAsync(permUrl);
-            var jsonStr = await client.GetStringAsync(api);
-            d = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonStr);
+            throw new Exception($"json parse error: {jsonStr}");
+        }
+        if (!d.ContainsKey("version") || !d.ContainsKey("url"))
+        {
+            throw new Exception($"json parse error: {jsonStr}");
         }
         var version = (string)d.version;
         var url = (string)d.url;

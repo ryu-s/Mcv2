@@ -49,7 +49,7 @@ namespace ryu_s.BrowserCookie
 
             public BrowserType Type { get; }
 
-            public Cookie GetCookie(string domain, string name)
+            public Cookie? GetCookie(string domain, string name)
             {
                 var query = "SELECT value, name, host, path, expiry FROM moz_cookies WHERE host LIKE '%" + domain + "' AND name = '" + name + "'";
                 var collection = GetCookieCollectionInternal(query);
@@ -74,46 +74,45 @@ namespace ryu_s.BrowserCookie
                 var tempFile = new TempFileProvider();
                 System.IO.File.Copy(Path, tempFile.Path, true);
 
-                var list = new List<Cookie>();
-                System.Data.DataTable dt = null;
+                System.Data.DataTable? dt = null;
                 using (var conn = SQLiteHelper.CreateConnection(tempFile.Path))
                 {
                     conn.Open();
                     dt = SQLiteHelper.ExecuteReader(conn, query);
                 }
+                if (dt is null) return [];
 
-                if (dt != null)
+                var list = new List<Cookie>();
+                var cc = new CookieContainer();
+                foreach (System.Data.DataRow row in dt.Rows)
                 {
-                    var cc = new CookieContainer();
-                    foreach (System.Data.DataRow row in dt.Rows)
+                    //カラム名
+                    //id,baseDomain,appId,inBrowserElement,name,value,host,path,expiry,lastAccessed,creationTime,isSecure,isHttpOnly
+                    var value = row["value"].ToString();
+
+                    //FRESH!で不具合のためコメントアウト。
+                    //if (value != null)
+                    //    value = Uri.EscapeDataString(value);
+                    var name = row["name"].ToString()!;
+                    var host = row["host"].ToString();
+                    var path = row["path"].ToString();
+                    var expires = long.Parse(row["expiry"].ToString()!);
+                    var cookie = new Cookie(name, value, path, host)
                     {
-                        //カラム名
-                        //id,baseDomain,appId,inBrowserElement,name,value,host,path,expiry,lastAccessed,creationTime,isSecure,isHttpOnly
-                        var value = row["value"].ToString();
+                        //TODO:expiresは弄らずにそのまま変換して大丈夫だろうか。正しい値を取得できているか確認していない。
+                        Expires = Tools.FromUnixTime(expires)
+                    };
 
-                        //FRESH!で不具合のためコメントアウト。
-                        //if (value != null)
-                        //    value = Uri.EscapeDataString(value);
-                        var name = row["name"].ToString();
-                        var host = row["host"].ToString();
-                        var path = row["path"].ToString();
-                        var expires = long.Parse(row["expiry"].ToString());
-                        var cookie = new Cookie(name, value, path, host)
-                        {
-                            //TODO:expiresは弄らずにそのまま変換して大丈夫だろうか。正しい値を取得できているか確認していない。
-                            Expires = Tools.FromUnixTime(expires)
-                        };
-
-                        try
-                        {
-                            //CookieContainerに追加できないようなサイズの大きいvalueが存在したため、適合していることをチェックする。
-                            //適合しなかったら例外が投げられ、追加しない。
-                            cc.Add(cookie);
-                            list.Add(cookie);
-                        }
-                        catch (CookieException) { }
+                    try
+                    {
+                        //CookieContainerに追加できないようなサイズの大きいvalueが存在したため、適合していることをチェックする。
+                        //適合しなかったら例外が投げられ、追加しない。
+                        cc.Add(cookie);
+                        list.Add(cookie);
                     }
+                    catch (CookieException) { }
                 }
+
                 return list;
             }
             /// <summary>
@@ -157,7 +156,7 @@ namespace ryu_s.BrowserCookie.Firefox
         /// <param name="moz_path"></param>
         /// <param name="iniFileName"></param>
         /// <returns></returns>
-        public static FirefoxProfile GetDefaultProfile(string moz_path, string iniFileName)
+        public static FirefoxProfile? GetDefaultProfile(string moz_path, string iniFileName)
         {
             var profiles = GetProfiles(moz_path, iniFileName);
             if (profiles.Count == 1)
@@ -175,7 +174,7 @@ namespace ryu_s.BrowserCookie.Firefox
         public static List<FirefoxProfile> GetProfiles(IEnumerable<string> lines, string moz_path)
         {
             var list = new List<FirefoxProfile>();
-            FirefoxProfile profile = null;
+            FirefoxProfile? profile = null;
             foreach (var line in lines)
             {
                 if (line.StartsWith("[Profile"))

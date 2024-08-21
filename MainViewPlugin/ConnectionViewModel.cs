@@ -9,7 +9,7 @@ namespace Mcv.MainViewPlugin;
 
 class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    private string _input;
+    private string _input = "";
     private SiteViewModel _selectedSite;
     private BrowserViewModel _selectedBrowser;
     private bool _canConnect;

@@ -14,7 +14,7 @@ public interface IMessageImage : IMessagePart
     int? Height { get; }
     string Url { get; }
 
-    string Alt { get; }
+    string? Alt { get; }
 }
 /// <summary>
 /// 指定された画像の一部を描画する用
@@ -52,5 +52,5 @@ public interface IMessageSvg : IMessagePart
     int? Width { get; }
     int? Height { get; }
     string Data { get; }
-    string Alt { get; }
+    string? Alt { get; }
 }

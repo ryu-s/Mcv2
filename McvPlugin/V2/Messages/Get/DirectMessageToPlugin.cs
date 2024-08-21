@@ -16,3 +16,7 @@ public record ReplyDirectMessage(IReplyMessageToPluginV2 Message) : IReplyMessag
 {
     public string Raw { get; } = "";
 }
+public record ReplyPluginNotfound() : IReplyMessageToPluginV2
+{
+    public string Raw { get; } = "";
+}

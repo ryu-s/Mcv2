@@ -7,6 +7,12 @@ class MetadataViewModel : ViewModelBase, INotifyPropertyChanged
     public MetadataViewModel(ConnectionName connectionName)
     {
         ConnectionName = connectionName;
+        _title = "";
+        _elapsed = "";
+        _currentViewers = "";
+        _totalViewers = "";
+        _active = "";
+        _others = "";
     }
     private string _title;
 

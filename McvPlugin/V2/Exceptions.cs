@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization;
-namespace Mcv.PluginV2;
+﻿namespace Mcv.PluginV2;
 
 [Serializable]
 public class ChromeCookiesFileNotFoundException : Exception
@@ -11,10 +10,6 @@ public class ChromeCookiesFileNotFoundException : Exception
     public ChromeCookiesFileNotFoundException(string message, Exception innerException)
         : base(message, innerException)
     { }
-
-    protected ChromeCookiesFileNotFoundException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
-    { }
 }
 [Serializable]
 public class FirefoxProfileIniNotFoundException : Exception
@@ -25,9 +20,5 @@ public class FirefoxProfileIniNotFoundException : Exception
 
     public FirefoxProfileIniNotFoundException(string message, Exception innerException)
         : base(message, innerException)
-    { }
-
-    protected FirefoxProfileIniNotFoundException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
     { }
 }

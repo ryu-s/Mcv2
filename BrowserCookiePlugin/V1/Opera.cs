@@ -49,7 +49,7 @@ namespace ryu_s.BrowserCookie
                 return GetCookieCollectionInternal(query);
             }
 
-            public Cookie GetCookie(string domain, string name)
+            public Cookie? GetCookie(string domain, string name)
             {
                 var query = "SELECT value, name, host_key, path, expires_utc, encrypted_value FROM cookies WHERE host_key LIKE '%" + domain + "' AND name = '" + name + "'";
                 var collection = GetCookieCollectionInternal(query);

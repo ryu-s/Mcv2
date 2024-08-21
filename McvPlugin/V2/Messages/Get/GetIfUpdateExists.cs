@@ -4,3 +4,7 @@ public record ReplyIfUpdateExists(bool UpdateExists, string Url, string Current,
 {
     public string Raw => $"";
 }
+public record ReplyIfUpdateExistsError() : IReplyMessageToPluginV2
+{
+    public string Raw => $"";
+}

@@ -463,7 +463,7 @@ namespace Mcv.MainViewPlugin
         //}
         public IMainViewPluginOptions Clone()
         {
-            return this.MemberwiseClone() as IMainViewPluginOptions;
+            return (IMainViewPluginOptions)this.MemberwiseClone();
         }
 
         public void Set(IMainViewPluginOptions options)

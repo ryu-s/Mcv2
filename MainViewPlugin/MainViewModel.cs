@@ -696,8 +696,8 @@ namespace Mcv.MainViewPlugin
         private readonly ObservableCollection<IMcvCommentViewModel> _comments = new();
 
 
-        private ConnectionViewModel _selectedConnection;
-        public ConnectionViewModel SelectedConnection
+        private ConnectionViewModel? _selectedConnection;
+        public ConnectionViewModel? SelectedConnection
         {
             get { return _selectedConnection; }
             set

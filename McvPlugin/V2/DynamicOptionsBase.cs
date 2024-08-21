@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 
 namespace Mcv.PluginV2
 {
@@ -106,7 +104,7 @@ namespace Mcv.PluginV2
         }
         #region INotifyPropertyChanged
         [NonSerialized]
-        private System.ComponentModel.PropertyChangedEventHandler _propertyChanged;
+        private System.ComponentModel.PropertyChangedEventHandler? _propertyChanged;
         /// <summary>
         /// 
         /// </summary>
@@ -131,22 +129,21 @@ namespace Mcv.PluginV2
             /// 文字列をDeserializerに通した後の値の妥当性を評価する。
             /// 文字列に形式上の問題がある場合はDeserializerで例外が投げられるだろうからcatchしてDefaultValueを入れる
             /// </summary>
-            public Predicate<dynamic> Predicate { get; set; }
-            public dynamic DefaultValue { get; set; }
-            public dynamic Value { get; set; }
-            public Func<dynamic, string> Serializer { get; set; }
-            public Func<string, dynamic> Deserializer { get; set; }
-
+            public required Predicate<dynamic> Predicate { get; set; }
+            public required dynamic DefaultValue { get; set; }
+            public dynamic Value { get; set; } = default!;
+            public required Func<dynamic, string> Serializer { get; set; }
+            public required Func<string, dynamic> Deserializer { get; set; }
         }
     }
 }
 namespace Test
 {
+    using ArrayExtensions;
+    using System;
     //https://github.com/Burtsev-Alexey/net-object-deep-copy
     using System.Collections.Generic;
     using System.Reflection;
-    using ArrayExtensions;
-    using System;
 
     public static class ObjectExtensions
     {
@@ -164,7 +161,6 @@ namespace Test
         }
         private static Object InternalCopy(Object originalObject, IDictionary<Object, Object> visited)
         {
-            if (originalObject == null) return null;
             var typeToReflect = originalObject.GetType();
             if (IsPrimitive(typeToReflect)) return originalObject;
             if (visited.ContainsKey(originalObject)) return visited[originalObject];
@@ -173,14 +169,14 @@ namespace Test
                 //デリゲートの場合はオリジナルをそのまま帰すようにした。
                 return originalObject;
             }
-            var cloneObject = CloneMethod.Invoke(originalObject, null);
+            var cloneObject = CloneMethod.Invoke(originalObject, null)!;
             if (typeToReflect.IsArray)
             {
-                var arrayType = typeToReflect.GetElementType();
+                var arrayType = typeToReflect.GetElementType()!;
                 if (IsPrimitive(arrayType) == false)
                 {
-                    Array clonedArray = (Array)cloneObject;
-                    clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited), indices));
+                    Array clonedArray = (Array)cloneObject!;
+                    clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices)!, visited), indices));
                 }
 
             }
@@ -206,6 +202,7 @@ namespace Test
                 if (filter != null && filter(fieldInfo) == false) continue;
                 if (IsPrimitive(fieldInfo.FieldType)) continue;
                 var originalFieldValue = fieldInfo.GetValue(originalObject);
+                if (originalFieldValue is null) continue;
                 var clonedFieldValue = InternalCopy(originalFieldValue, visited);
                 fieldInfo.SetValue(cloneObject, clonedFieldValue);
             }

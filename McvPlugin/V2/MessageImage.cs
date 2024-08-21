@@ -8,9 +8,9 @@ public class MessageImage : IMessageImage
 
     public int? Height { get; set; }
 
-    public string Url { get; set; }
+    public required string Url { get; set; }
 
-    public string Alt { get; set; }
+    public string? Alt { get; set; }
 
     public override bool Equals(object? obj)
     {
@@ -26,6 +26,13 @@ public class MessageImage : IMessageImage
     }
     public override int GetHashCode()
     {
-        return Url.GetHashCode() ^ Alt.GetHashCode();
+        if (Alt is null)
+        {
+            return Url.GetHashCode();
+        }
+        else
+        {
+            return Url.GetHashCode() ^ Alt.GetHashCode();
+        }
     }
 }

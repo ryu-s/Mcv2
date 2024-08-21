@@ -2,13 +2,8 @@
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities.Encoders;
-using System;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Linq;
 using System.Text;
-using Org.BouncyCastle.X509;
-using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace ryu_s.BrowserCookie
 {
@@ -18,38 +13,38 @@ namespace ryu_s.BrowserCookie
         private void LoadKey()
         {
             var encryptedKey = GetEncryptedKey(LocalStatePath);
+            if (encryptedKey is null)
+            {
+                throw new Exception($"{nameof(encryptedKey)} is null");
+            }
             var key = DecryptEncryptedKey(encryptedKey);
             Key = key;
         }
-        byte[] Key { get; set; }
-        public string Decrypt(byte[] encrypted_value)
+        byte[]? Key { get; set; }
+        public string? Decrypt(byte[] encrypted_value)
         {
             if (!IsAesGcmData(encrypted_value)) return null;
             var nonce = GetNonce(encrypted_value);
-            if (Key == null)
+            if (Key is null)
             {
                 LoadKey();
             }
+            if (Key is null) return null;
             var data = encrypted_value.Skip(15).ToArray();
             var bytes = Decrypt(data, Key, nonce);
             return Encoding.UTF8.GetString(bytes);
         }
-        private byte[] GetNonce(byte[] encrypted_value)
+        private static byte[] GetNonce(byte[] encrypted_value)
         {
             return encrypted_value.Skip(3).Take(12).ToArray();
         }
-        private bool IsAesGcmData(byte[] encryptedData)
+        private static bool IsAesGcmData(byte[] encryptedData)
         {
             var data = encryptedData;
             return (data[0] == 'v' && data[1] == '1' && data[2] == '0');
         }
         public static byte[] DecryptEncryptedKey(string encryptedKey)
         {
-            if (encryptedKey is null)
-            {
-                throw new ArgumentNullException(nameof(encryptedKey));
-            }
-
             var base64Decoded = Base64.Decode(encryptedKey);
             var dpapiedKey = base64Decoded.Skip(5).ToArray();
             return NativeMethods.CryptUnprotectData(dpapiedKey);
@@ -59,7 +54,7 @@ namespace ryu_s.BrowserCookie
         /// </summary>
         /// <param name="statePath"></param>
         /// <returns></returns>
-        private static string GetEncryptedKey(string statePath)
+        private static string? GetEncryptedKey(string statePath)
         {
             string content;
             using (var sr = new StreamReader(statePath))

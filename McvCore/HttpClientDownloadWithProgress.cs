@@ -24,7 +24,7 @@ class HttpClientDownloadWithProgress : IDisposable
     private readonly string _downloadUrl;
     private readonly string _destinationFilePath;
 
-    private HttpClient _httpClient;
+    private HttpClient? _httpClient;
 
     public event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
 

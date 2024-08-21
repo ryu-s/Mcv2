@@ -26,13 +26,12 @@ namespace ryu_s.BrowserCookie
             if (conn == null)
                 throw new ArgumentNullException("conn");
 
-            DataTable dt = null;
-            using (var cmd = new SQLiteCommand(query, conn))
-            using (var adapter = new SQLiteDataAdapter(cmd))
-            {
-                dt = new DataTable();
-                adapter.Fill(dt);
-            }
+            using var cmd = new SQLiteCommand(query, conn);
+            using var adapter = new SQLiteDataAdapter(cmd);
+
+            var dt = new DataTable();
+            adapter.Fill(dt);
+
             return dt;
         }
     }

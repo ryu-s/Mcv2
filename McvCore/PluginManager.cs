@@ -105,12 +105,19 @@ class PluginManagerActor : ReceiveActor
     {
         return _pluginRoleDict.Where(p => PluginTypeChecker.IsSitePlugin(p.Value)).Select(p => p.Key).FirstOrDefault();
     }
+    /// <summary>
+    /// 指定したプラグインに対してGetMessageを送る
+    /// </summary>
+    /// <param name="pluginId"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
     internal Task<IReplyMessageToPluginV2> RequestMessage(PluginId pluginId, IGetMessageToPluginV2 message)
     {
         var plugin = GetPluginActorById(pluginId);
         if (plugin is null)
         {
-            return null;//TODO:
+            //指定されたpluginIdを持つプラグインが存在しない
+            return Task.FromResult(new ReplyPluginNotfound() as IReplyMessageToPluginV2);
         }
         return plugin.Ask<IReplyMessageToPluginV2>(new GetMessageToPluginV2(message));
     }

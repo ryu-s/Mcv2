@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Mcv.PluginV2;
 using System.Net;
 using System.Text;
-using System.IO;
-using Mcv.PluginV2;
 
 namespace ryu_s.BrowserCookie
 {
@@ -96,7 +92,7 @@ namespace ryu_s.BrowserCookie
                 return GetCookieCollectionInternal(query);
             }
 
-            public Cookie GetCookie(string domain, string name)
+            public Cookie? GetCookie(string domain, string name)
             {
                 var query = "SELECT value, name, host_key, path, expires_utc, encrypted_value FROM cookies WHERE host_key LIKE '%" + domain + "' AND name = '" + name + "'";
                 var collection = GetCookieCollectionInternal(query);
@@ -125,8 +121,8 @@ namespace ryu_s.BrowserCookie
             #region Methods
             private string GetFiles(string path)
             {
-                var defaultDir = System.IO.Path.GetDirectoryName(path);
-                var userDataDir = System.IO.Directory.GetParent(defaultDir);
+                var defaultDir = System.IO.Path.GetDirectoryName(path)!;
+                var userDataDir = System.IO.Directory.GetParent(defaultDir)!;
                 var list = GetChildren(userDataDir.FullName);
                 return userDataDir.FullName + "=\"" + string.Join(",", list) + "\"";
             }
@@ -145,7 +141,7 @@ namespace ryu_s.BrowserCookie
             }
             private List<Cookie> GetCookieCollectionInternal(string query)
             {
-                System.Data.DataTable dt = null;
+                System.Data.DataTable? dt = null;
                 using (var tempFile = new TempFileProvider())
                 {
                     try
@@ -158,8 +154,8 @@ namespace ryu_s.BrowserCookie
                         try
                         {
                             var defaultDir = System.IO.Path.GetDirectoryName(Path);
-                            var userDataDir = System.IO.Directory.GetParent(defaultDir);
-                            if (System.IO.Directory.Exists(userDataDir.FullName))
+                            var userDataDir = defaultDir is not null ? System.IO.Directory.GetParent(defaultDir) : null;
+                            if (userDataDir is not null && System.IO.Directory.Exists(userDataDir.FullName))
                             {
                                 str = GetFiles(userDataDir.FullName);
                             }
@@ -175,47 +171,46 @@ namespace ryu_s.BrowserCookie
                         dt = SQLiteHelper.ExecuteReader(conn, query);
                     }
                 }
+                if (dt is null) return [];
+
                 var list = new List<Cookie>();
-                if (dt != null)
+                var cc = new CookieContainer();
+                foreach (System.Data.DataRow row in dt.Rows)
                 {
-                    var cc = new CookieContainer();
-                    foreach (System.Data.DataRow row in dt.Rows)
+                    var name = row["name"].ToString()!;
+                    var value = row["value"].ToString();
+                    if (string.IsNullOrEmpty(value))//暗号化してるっぽいから復号化してみる。
                     {
-                        var name = row["name"].ToString();
-                        var value = row["value"].ToString();
-                        if (string.IsNullOrEmpty(value))//暗号化してるっぽいから復号化してみる。
+                        var encrypted_value = (byte[])row["encrypted_value"];
+                        if (IsDPAPIed(encrypted_value))
                         {
-                            var encrypted_value = (byte[])row["encrypted_value"];
-                            if (IsDPAPIed(encrypted_value))
-                            {
-                                value = UnProtect(encrypted_value);
-                            }
-                            else
-                            {
-                                value = _decryptor.Decrypt(encrypted_value);
-                            }
+                            value = UnProtect(encrypted_value);
                         }
-                        var host_key = row["host_key"].ToString();
-                        var path = row["path"].ToString();
-                        var expires_utc = long.Parse(row["expires_utc"].ToString());
-                        var cookie = new Cookie(name, value, path, host_key)
+                        else
                         {
-                            //TODO:expires_utcの変換はこれで大丈夫だろうか。正しい値を取得できているか確認していない。
-                            Expires = Tools.FromUnixTime(expires_utc / 1000000L - 11644473600L),
-                        };
-                        if (value == null)
-                        {
-                            continue;
+                            value = _decryptor.Decrypt(encrypted_value);
                         }
-                        try
-                        {
-                            //CookieContainerに追加できないようなサイズの大きいvalueが存在したため、適合していることをチェックする。
-                            //適合しなかったら例外が投げられ、追加しない。
-                            cc.Add(cookie);
-                            list.Add(cookie);
-                        }
-                        catch (CookieException) { }
                     }
+                    var host_key = row["host_key"].ToString();
+                    var path = row["path"].ToString();
+                    var expires_utc = long.Parse(row["expires_utc"].ToString()!);
+                    var cookie = new Cookie(name, value, path, host_key)
+                    {
+                        //TODO:expires_utcの変換はこれで大丈夫だろうか。正しい値を取得できているか確認していない。
+                        Expires = Tools.FromUnixTime(expires_utc / 1000000L - 11644473600L),
+                    };
+                    if (value == null)
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        //CookieContainerに追加できないようなサイズの大きいvalueが存在したため、適合していることをチェックする。
+                        //適合しなかったら例外が投げられ、追加しない。
+                        cc.Add(cookie);
+                        list.Add(cookie);
+                    }
+                    catch (CookieException) { }
                 }
                 return list;
             }
