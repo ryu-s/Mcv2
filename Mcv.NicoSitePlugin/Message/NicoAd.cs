@@ -33,7 +33,7 @@ namespace NicoSitePlugin
     {
         public override SiteType SiteType { get; } = SiteType.NicoLive;
         public NicoMessageType NicoMessageType { get; } = NicoMessageType.Item;
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public DateTime PostedAt { get; set; }
         public string Text { get; set; }
         public string RoomName { get; set; }

@@ -55,7 +55,7 @@ namespace NicoSitePlugin
     }
     public interface INicoGift : INicoMessage
     {
-        string UserId { get; }
+        string? UserId { get; }
         DateTime PostedAt { get; }
         string Text { get; }
         [Obsolete]

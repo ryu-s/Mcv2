@@ -8,6 +8,8 @@ using System.Threading;
 using Newtonsoft.Json;
 using NicoSitePlugin.Metadata;
 using Mcv.PluginV2;
+using Mcv.NicoSitePlugin.InternalMessage;
+using System.Diagnostics;
 
 namespace NicoSitePlugin
 {
@@ -133,7 +135,7 @@ check:
             {
                 throw new InvalidOperationException("bug");
             }
-            var url = "https://live2.nicovideo.jp/watch/" + vid;
+            var url = "https://live.nicovideo.jp/watch/" + vid;
 
 
             var liveHtml = await _server.GetAsync(url, cc);
@@ -424,7 +426,7 @@ check:
                     break;
             }
         }
-        private async void ChatProvider_Received(object sender, Chat.IChatMessage e)
+        private async void ChatProvider_Received(object? sender, Chat.IChatMessage e)
         {
             var message = e;
             try
@@ -442,11 +444,12 @@ check:
         readonly List<Task> _toAdd = new List<Task>();
         TaskCompletionSource<object> _mainLooptcs;
         private readonly Chat.ChatProvider _chatProvider;
+        private readonly ChatProvider2 _chatProvider2;
         Metadata.Room _room;
         DataProps _dataProps;
         private bool _disposedValue;
 
-        private void MetaProvider_Received(object sender, Metadata.IMetaMessage e)
+        private void MetaProvider_Received(object? sender, Metadata.IMetaMessage e)
         {
             var message = e;
 
@@ -495,6 +498,13 @@ check:
                         //Disconnect();
                         break;
                     case Metadata.ServerTime serverTime:
+                        break;
+                    case Metadata.MessageServer server:
+                        {
+                            var t = _chatProvider2.ReceiveAsync(server.ViewUri);
+                            _toAdd.Add(t);
+                            _mainLooptcs.SetResult(null);
+                        }
                         break;
                 }
             }
@@ -557,6 +567,80 @@ check:
             _metaProvider.Received += MetaProvider_Received;
             _chatProvider = new Chat.ChatProvider(_logger);
             _chatProvider.Received += ChatProvider_Received;
+            _chatProvider2 = new ChatProvider2(server);
+            _chatProvider2.MessageReceived += ChatProvider2_MessageReceived;
+
+        }
+
+        private void ChatProvider2_MessageReceived(object? sender, (Meta Meta, NicoliveMessage Message) e)
+        {
+            if (e.Message.Chat is Mcv.NicoSitePlugin.InternalMessage.Chat chat)
+            {
+                var comment = new NicoComment("")
+                {
+                    ChatNo = chat.No,
+                    UserName = chat.Name,
+                    Text = chat.Content,
+                    UserId = chat.HashedUserId ?? "",
+                };
+                var context = new NicoMessageContext(comment, chat.HashedUserId, null, false);
+                RaiseMessageReceived(context);
+            }
+            else if (e.Message.Gift is Mcv.NicoSitePlugin.InternalMessage.Gift gift)
+            {
+                var userId = gift.AdvertiserUserId?.ToString();
+                RaiseMessageReceived(new NicoMessageContext(new NicoGift("")
+                {
+                    ChatNo = null,
+                    ItemCount = 1,
+                    ItemName = gift.ItemName,
+                    UserId = userId,
+                    NameItems = MessagePartFactory.CreateMessageItems(gift.AdvertiserName),
+                }, userId, null, false));
+            }
+            else if (e.Message.Nicoad is Mcv.NicoSitePlugin.InternalMessage.Nicoad ad)
+            {
+
+            }
+            else if (e.Message.SimpleNotification is Mcv.NicoSitePlugin.InternalMessage.SimpleNotification sim)
+            {
+                if (sim.Cruise is string cruise)
+                {
+
+                }
+                else if (sim.Emotion is string emotion)
+                {
+
+                }
+                else if (sim.Ichiba is string ichiba)
+                {
+
+                }
+                else if (sim.ProgramExtended is string extended)
+                {
+
+                }
+                else if (sim.Quote is string quote)
+                {
+
+                }
+                else if (sim.RankingIn is string rankingin)
+                {
+
+                }
+                else if (sim.RankingUpdated is string rankingupdated)
+                {
+
+                }
+                else if (sim.Visited is string visited)
+                {
+
+                }
+                else
+                {
+                    //仕様変更への対応漏れ
+                }
+            }
         }
 
         protected virtual void Dispose(bool disposing)
@@ -568,6 +652,7 @@ check:
                     // TODO: dispose managed state (managed objects)
                     _metaProvider.Received -= MetaProvider_Received;
                     _chatProvider.Received -= ChatProvider_Received;
+                    _chatProvider2.MessageReceived -= ChatProvider2_MessageReceived;
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
@@ -588,6 +673,98 @@ check:
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+    }
+    class ChatProvider2
+    {
+        private readonly IDataSource _server;
+        public event EventHandler<Mcv.NicoSitePlugin.InternalMessage.Chat>? ChatReceived;
+        public event EventHandler<(Mcv.NicoSitePlugin.InternalMessage.Meta Meta, Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage Message)>? MessageReceived;
+        public ChatProvider2(IDataSource server)
+        {
+            _server = server;
+        }
+        bool _isFirst = true;
+        internal async Task ReceiveAsync(string uri)
+        {
+            var urlz = uri + "?at=now";
+            var isLiveEnded = false;
+            while (!isLiveEnded)
+            {
+                Debug.WriteLine("取得中");
+                var k = await _server.GetBytesAsync(urlz);
+                Debug.WriteLine("取得完了");
+                var entries = ChunkedEntry.Create(k);
+
+                foreach (var entry in entries)
+                {
+                    if (entry.Backward is BackwardSegment backward)
+                    {
+                        ////以下のコードだとChunkedMessageのデコードでエラーになった。
+                        //var gg0 = await _server.GetBytesAsync(backward.Segment);
+                        //var a = ProtobufParser.Parse(gg0);
+                        //var list = new List<ChunkedMessage>();
+                        //foreach (var b in a)
+                        //{
+                        //    var chunkedMessage = ChunkedMessage.Create(((LengthDelimited)b.Value).Bytes);
+                        //    list.Add(chunkedMessage);
+                        //}
+                        //var gg1 = await _server.GetBytesAsync(backward.Snapshot);
+                    }
+                }
+                foreach (var entry in entries)
+                {
+                    if (entry.Previous is MessageSegment previous)
+                    {
+                        //Debug.WriteLine($"previous={previous.Uri} from={previous.From} until={previous.Until}");
+                        //var gg = await _server.GetBytesAsync(previous.Uri);
+                        //var tt1 = ChunkedEntry.SplitData(gg);
+                    }
+
+                }
+                foreach (var entry in entries)
+                {
+                    if (entry.Segment is MessageSegment segment)
+                    {
+                        var gg = await _server.GetBytesAsync(segment.Uri);
+                        var ns = ChunkedMessage.Create2(gg);
+                        foreach (var n in ns)
+                        {
+                            if (n.Message is Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage message)
+                            {
+                                MessageReceived?.Invoke(this, (n.Meta, message));
+                            }
+                            else if (n.Signal is Signal.Flushed)
+                            {
+
+                            }
+                            else if (n.State is NicoliveState state)
+                            {
+                                if (state?.State == ProgramState.Ended)
+                                {
+                                    isLiveEnded = true;
+                                }
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                        Debug.WriteLine($"from={segment.From} until={segment.Until}");
+                    }
+                }
+
+                foreach (var entry in entries)
+                {
+                    if (entry.Next is ReadyForNext next)
+                    {
+                        urlz = uri + "?at=" + next.At;
+                        Debug.WriteLine("======");
+                        break;
+                    }
+                }
+            }
+            Debug.WriteLine("ChatProvider.ReceiveAsync() finished");
         }
     }
 }

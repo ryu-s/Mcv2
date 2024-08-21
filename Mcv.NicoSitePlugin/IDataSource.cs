@@ -7,5 +7,6 @@ namespace NicoSitePlugin
     {
         Task<string> GetAsync(string url, CookieContainer cc);
         Task<string> GetAsync(string url);
+        Task<byte[]> GetBytesAsync(string url);
     }
 }
