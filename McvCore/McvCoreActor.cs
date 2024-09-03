@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using CommunityToolkit.Mvvm.Messaging;
 using Mcv.Core.CoreActorMessages;
 using Mcv.Core.PluginActorMessages;
 using Mcv.Core.V1;
@@ -10,10 +11,13 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 
 namespace Mcv.Core;
 
@@ -113,6 +117,9 @@ class McvCoreActor : ReceiveActor
         _self.Tell(new SystemShutDown());
     }
     private readonly IActorRef _self;
+    Thread _splashThread;
+    SplashWindow _splashWindow;
+    SplashWindowViewModel _splashVm;
     public McvCoreActor()
     {
         //System.Data.SQLite.Coreのバージョンが1.0.118のの時にSingleFileでPublishするとNullReferenceExceptionが発生する。
@@ -132,6 +139,31 @@ class McvCoreActor : ReceiveActor
 
         _userStoreManager = new V1.UserStoreManager();
         _userStoreManager.UserAdded += UserStoreManager_UserAdded;
+
+        _splashVm = new SplashWindowViewModel();
+
+
+        _splashThread = new Thread(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            var newWindow = new SplashWindow();
+            newWindow.Closed += (o, args) =>
+            {
+                Dispatcher.CurrentDispatcher.BeginInvokeShutdown(DispatcherPriority.Background);
+            };
+            newWindow.DataContext = _splashVm;
+            newWindow.Show();
+            Dispatcher.Run();
+        });
+
+        _splashThread.SetApartmentState(ApartmentState.STA);
+        _splashThread.IsBackground = true;
+
+        _splashThread.Start();
+
 
         Receive<Initialize>(_ =>
         {
@@ -194,6 +226,12 @@ class McvCoreActor : ReceiveActor
                         //rollback
                         _coreLogger.Log($"PluginAdded failed: {pluginHello.PluginName}");
                         RemovePlugin(pluginHello.PluginId);
+                    }
+                    if (PluginTypeChecker.IsMainViewPlugin(pluginHello.PluginRole))
+                    {
+                        //SplashWindowを閉じる
+                        SplashWindowViewModel.RequestClose();
+                        _coreLogger.Log($"SplashWindow closed");
                     }
                     SetMessageToPluginManager(pluginHello.PluginId, new SetLoaded());
                     _coreLogger.Log($"PluginAdded: {pluginHello.PluginName}");
@@ -555,8 +593,10 @@ class McvCoreActor : ReceiveActor
     }
     internal bool Initialize()
     {
+        _splashVm.AddLog("初期化開始");
         try
         {
+            _splashVm.AddLog("ファイルの読み書き権限確認");
             var testResult = CheckIfCanReadWrite();
         }
         catch (Exception)
@@ -578,13 +618,13 @@ class McvCoreActor : ReceiveActor
             File.Move(Path.Combine(OptionsPath, "users_Twitch.db"), Path.Combine(OptionsPath, "users_TwitchSitePlugin.db"));
         }
 
-
+        _splashVm.AddLog("設定の読み込み");
         _coreOptions = LoadOptions(OptionsPath, _logger);
 
         _coreOptions.PluginDir = "plugins";
 
+        _splashVm.AddLog("プラグインの読み込み");
         var pluginHost = new PluginHost(this);
-
         var plugins = PluginLoader.LoadPlugins(_coreOptions.PluginDir);
         AddPlugins(plugins, pluginHost);
 

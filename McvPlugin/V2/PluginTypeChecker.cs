@@ -10,4 +10,8 @@ public static class PluginTypeChecker
     {
         return pluginRoles.Any(s => s.StartsWith("cookie:"));
     }
+    public static bool IsMainViewPlugin(IList<string> pluginRoles)
+    {
+        return pluginRoles.Any(s => s == "mainview");
+    }
 }

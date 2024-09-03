@@ -133,6 +133,7 @@ public class MainViewPlugin : IPlugin
                         DataContext = _vm
                     };
                     _v.Show();
+                    _v.Activate();
                     //アップデートがあるか確認する
                     var (updateExists, url, current, latest) = await _adapter.CheckIfUpdateExistsAsync();
                     if (updateExists)
