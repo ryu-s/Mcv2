@@ -109,6 +109,28 @@ namespace Mcv.MainViewPlugin
 
         public SuggestToUpdateViewModel Vm { get; }
     }
+    class ShowUsingLatestViewMessage : RequestMessage<string>
+    {
+        public ShowUsingLatestViewMessage(UsingLatestViewModel vm)
+        {
+            Vm = vm;
+        }
+
+        public UsingLatestViewModel Vm { get; }
+    }
+    class CloseUsingLatestViewMessage : RequestMessage<string> { }
+    class UsingLatestViewModel : ViewModelBase, INotifyPropertyChanged
+    {
+        public ICommand CloseCommand { get; }
+        public UsingLatestViewModel()
+        {
+            CloseCommand = new RelayCommand(Close);
+        }
+        private void Close()
+        {
+            WeakReferenceMessenger.Default.Send(new CloseUsingLatestViewMessage());
+        }
+    }
     class SuggestToUpdateViewModel : ViewModelBase, INotifyPropertyChanged
     {
         private readonly IAdapter _adapter;
@@ -683,6 +705,7 @@ namespace Mcv.MainViewPlugin
             else if (!isAutoCheck)
             {
                 //最新バージョンをお使いです。と表示する
+                WeakReferenceMessenger.Default.Send(new ShowUsingLatestViewMessage(new UsingLatestViewModel()));
             }
         }
         #endregion //Methods
@@ -732,7 +755,7 @@ namespace Mcv.MainViewPlugin
             var version = await GetVersionNumber();
             var conf = await GetAppSolutionConfiguration();
             var title = $"{name} v{version}";
-            if (string.IsNullOrEmpty(title))
+            if (!string.IsNullOrEmpty(conf))
             {
                 title += $" ({conf})";
             }

@@ -109,6 +109,19 @@ namespace Mcv.MainViewPlugin
                     Debug.WriteLine(ex.Message);
                 }
             });
+            WeakReferenceMessenger.Default.Register<ShowUsingLatestViewMessage>(this, (_, m) =>
+            {
+                try
+                {
+                    var v = new UsingLatestView();
+                    v.DataContext = m.Vm;
+                    v.Show();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            });
         }
 
         /// <summary>

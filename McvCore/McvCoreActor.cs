@@ -715,6 +715,8 @@ class McvCoreActor : ReceiveActor
         s = "アルファ版";
 #elif DEBUG
         s = "DEBUG";
+#else
+        s = "安定版";
 #endif
         return s;
     }
@@ -723,7 +725,7 @@ class McvCoreActor : ReceiveActor
         var Name = GetAppName();
 #if BETA
         return Name + "_Beta";
-#elif Alpha
+#elif ALPHA
         return Name + "_Alpha";
 #else
         return Name;
