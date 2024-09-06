@@ -944,6 +944,31 @@ namespace Mcv.MainViewPlugin
             {
                 ShowSuggestToUpdateView(e.Url, e.CurrentVersion, e.LatestVersion);
             };
+
+            _adapter.Options.PropertyChanged += (s, e) =>
+             {
+                 switch (e.PropertyName)
+                 {
+                     case nameof(_adapter.Options.IsShowMetaTitle):
+                         RaisePropertyChanged(nameof(IsShowMetaTitle));
+                         break;
+                     case nameof(_adapter.Options.IsShowMetaElapse):
+                         RaisePropertyChanged(nameof(IsShowMetaElapse));
+                         break;
+                     case nameof(_adapter.Options.IsShowMetaCurrentViewers):
+                         RaisePropertyChanged(nameof(IsShowMetaCurrentViewers));
+                         break;
+                     case nameof(_adapter.Options.IsShowMetaTotalViewers):
+                         RaisePropertyChanged(nameof(IsShowMetaTotalViewers));
+                         break;
+                     case nameof(_adapter.Options.IsShowMetaActive):
+                         RaisePropertyChanged(nameof(IsShowMetaActive));
+                         break;
+                     case nameof(_adapter.Options.IsShowMetaOthers):
+                         RaisePropertyChanged(nameof(IsShowMetaOthers));
+                         break;
+                 }
+             };
             //_settingsContext = settingsContext;
             //settingsContext.Applied += (s, e) =>
             //{
