@@ -409,11 +409,11 @@ namespace Mcv.YouTubeLiveSitePlugin
             var timeoutMs_ = Math.Max(timeoutMs, 1000);
             if (actions.Count > 0)
             {
-                var waitTime = timeoutMs_ / actions.Count;
+                var waitTimeMs = timeoutMs_ / actions.Count;
                 foreach (var action in actions)
                 {
                     ProcessAction(action);
-                    await Task.Delay(timeoutMs, _cts.Token).ContinueWith(t => { });
+                    await Task.Delay(waitTimeMs, _cts.Token).ContinueWith(t => { });
                 }
             }
             else
