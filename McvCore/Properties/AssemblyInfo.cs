@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 
-//[assembly: InternalsVisibleTo("MultiCommentViewerTests")]
+[assembly: InternalsVisibleTo("McvCoreTests")]
 
 [assembly: AssemblyVersion("0.7.0")]

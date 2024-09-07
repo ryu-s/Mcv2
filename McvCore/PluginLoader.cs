@@ -30,7 +30,7 @@ static class PluginLoader
         }
         return null;
     }
-    public static List<IPlugin> LoadPlugins(string pluginsDir)
+    public static List<IPlugin> LoadPlugins(string pluginsDir, ICoreLogger logger)
     {
         var pluginDirs = Directory.GetDirectories(pluginsDir);
         var plugins = new List<IPlugin>();
@@ -47,6 +47,7 @@ static class PluginLoader
                 }
                 catch (Exception ex)
                 {
+                    logger.AddLog(ex);
                     Debug.WriteLine(ex.Message);
                 }
             }

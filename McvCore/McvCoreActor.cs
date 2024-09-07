@@ -10,6 +10,8 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,44 +20,6 @@ using System.Windows.Threading;
 
 namespace Mcv.Core;
 
-enum LogType
-{
-    Error,
-    Debug,
-}
-class LogData
-{
-    public string Message { get; set; }
-    public DateTime DateTime { get; set; } = DateTime.Now;
-    public LogData(string message)
-    {
-        Message = message;
-    }
-}
-class Logger
-{
-    List<LogData> _logs = new();
-    public void Log(string message)
-    {
-        _logs.Add(new LogData(message));
-    }
-    public void LogException(Exception ex, string message = "", string? detail = null)
-    {
-        Log($"Exception: {message} {ex.Message} {ex.StackTrace} {detail}");
-    }
-    public void WriteFile(string filename)
-    {
-        using (var sw = new StreamWriter(filename, true))
-        {
-            foreach (var log in _logs)
-            {
-                sw.WriteLine($"{log.DateTime} {log.Message}");
-                sw.WriteLine("=======================");
-            }
-        }
-        _logs.Clear();
-    }
-}
 class McvCoreActor : ReceiveActor
 {
     private readonly ConnectionManager _connManager;
@@ -63,9 +27,8 @@ class McvCoreActor : ReceiveActor
     private readonly V1.IUserStoreManager _userStoreManager;
     private static readonly string OptionsPath = Path.Combine("settings", "options.txt");
     private static readonly string MainViewPluginOptionsPath = Path.Combine("settings", "MainViewPlugin.txt");
-    private static readonly ILogger _logger = new LoggerTest();
+    private readonly ICoreLogger _logger;
     private IMcvCoreOptions _coreOptions = default!;
-    private static readonly Logger _coreLogger = new();
     private void SetMessageToPluginManager(ISetMessageToPluginV2 message)
     {
         _pluginManager.Tell(new SetSetToAllPlugin(message));
@@ -108,16 +71,61 @@ class McvCoreActor : ReceiveActor
 
         _userStoreManager.Save();
 
-        _coreLogger.WriteFile("log.txt");
+        SendErrorReport(_logger.GetLogs(), GetAppName(), GetAppVersion());
 
         //ここで直接Context.System.Terminate()したいけど、できないから自分にメッセージを送る
         _self.Tell(new SystemShutDown());
+    }
+    /// <summary>
+    /// エラー情報をサーバに送信する
+    /// </summary>
+    /// <param name="errorData"></param>
+    /// <param name="title"></param>
+    /// <param name="version"></param>
+    private static void SendErrorReport(string errorData, string appName, string version)
+    {
+        if (string.IsNullOrEmpty(errorData))
+        {
+            return;
+        }
+        var fileStreamContent = new StreamContent(new System.IO.MemoryStream(Encoding.UTF8.GetBytes(errorData)));
+        using (var client = new HttpClient())
+        using (var formData = new MultipartFormDataContent())
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", $"{appName} {version}");
+            formData.Add(fileStreamContent, "error", appName + "_" + version + "_" + "error.txt");
+            var t = client.PostAsync("https://int-main.net/upload", formData);
+            var response = t.Result;
+            if (!response.IsSuccessStatusCode)
+            {
+            }
+            else
+            {
+            }
+        }
+    }
+    /// <summary>
+    /// error.txtがあったらサーバに送信して削除する
+    /// </summary>
+    private static void SendErrorLogFile(string appName, string version)
+    {
+        var errorFilePath = "error.txt";
+        if (System.IO.File.Exists(errorFilePath))
+        {
+            string errorContent;
+            using (var sr = new System.IO.StreamReader(errorFilePath))
+            {
+                errorContent = sr.ReadToEnd();
+            }
+            SendErrorReport(errorContent, appName, version);
+            System.IO.File.Delete(errorFilePath);
+        }
     }
     private readonly IActorRef _self;
     Thread _splashThread;
     SplashWindow _splashWindow;
     SplashWindowViewModel _splashVm;
-    public McvCoreActor()
+    public McvCoreActor(ICoreLogger logger)
     {
         //System.Data.SQLite.Coreのバージョンが1.0.118のの時にSingleFileでPublishするとNullReferenceExceptionが発生する。
         //下記コードを追加することで回避できるらしい。
@@ -126,8 +134,9 @@ class McvCoreActor : ReceiveActor
 
         _self = Self;
         _appDirPath = AppContext.BaseDirectory;
+        _logger = logger;
         var io = new IOTest();
-        _pluginManager = Context.ActorOf(PluginManagerActor.Props());
+        _pluginManager = Context.ActorOf(PluginManagerActor.Props(logger));
 
         _connManager = new ConnectionManager();
         _connManager.ConnectionAdded += ConnManager_ConnectionAdded;
@@ -164,7 +173,14 @@ class McvCoreActor : ReceiveActor
 
         Receive<Initialize>(_ =>
         {
-            Initialize();
+            try
+            {
+                Initialize();
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<SystemShutDown>(_ =>
         {
@@ -184,7 +200,8 @@ class McvCoreActor : ReceiveActor
 
     internal async Task SetMessageAsync(ISetMessageToCoreV2 m)
     {
-        Debug.WriteLine($"McvCoreActor::SetMessageAsync(): {m}");
+        Debug.WriteLine($"McvCoreActor::SetMessageAsync(ISetMessageToCoreV2): {m}");
+        _logger.AddLog($"McvCoreActor::SetMessageAsync(ISetMessageToCoreV2): {m}", LogType.Debug);
         switch (m)
         {
             case SetPluginHello pluginHello:
@@ -215,23 +232,23 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-                        _coreLogger.LogException(ex);
+                        _logger.AddLog(ex);
                         success = false;
                     }
                     if (!success)
                     {
                         //rollback
-                        _coreLogger.Log($"PluginAdded failed: {pluginHello.PluginName}");
+                        Debug.WriteLine($"PluginAdded failed: {pluginHello.PluginName}");
                         RemovePlugin(pluginHello.PluginId);
                     }
                     if (PluginTypeChecker.IsMainViewPlugin(pluginHello.PluginRole))
                     {
                         //SplashWindowを閉じる
                         SplashWindowViewModel.RequestClose();
-                        _coreLogger.Log($"SplashWindow closed");
+                        Debug.WriteLine($"SplashWindow closed");
                     }
                     SetMessageToPluginManager(pluginHello.PluginId, new SetLoaded());
-                    _coreLogger.Log($"PluginAdded: {pluginHello.PluginName}");
+                    Debug.WriteLine($"PluginAdded: {pluginHello.PluginName}");
                     SetMessageToPluginManager(new NotifyPluginAdded(pluginHello.PluginId, pluginHello.PluginName, pluginHello.PluginRole));
                 }
                 break;
@@ -277,7 +294,7 @@ class McvCoreActor : ReceiveActor
                 ChangeConnectionStatus(connStDiffMsg.ConnStDiff);
                 break;
             case RequestAddConnection _:
-                _coreLogger.Log("RequestAddConnection");
+                Debug.WriteLine("RequestAddConnection");
                 await AddConnection();
                 break;
             case RequestShowSettingsPanel reqShowSettingsPanel:
@@ -330,17 +347,17 @@ class McvCoreActor : ReceiveActor
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogException(ex, "", $"src={srcPath}, dst={dstPath}");
+                                _logger.AddLog(ex, $"src={srcPath}, dst={dstPath}");
                             }
                         }
                     }
                     catch (System.IO.FileNotFoundException ex)
                     {
-                        _logger.LogException(ex);
+                        _logger.AddLog(ex);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogException(ex);
+                        _logger.AddLog(ex);
                     }
                     try
                     {
@@ -348,7 +365,7 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-                        _coreLogger.LogException(ex);
+                        _logger.AddLog(ex);
                     }
 
                     try
@@ -359,7 +376,7 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogException(ex);
+                        _logger.AddLog(ex);
                         return;
                     }
                     try
@@ -368,9 +385,18 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogException(ex);
+                        _logger.AddLog(ex);
                     }
                 }
+                break;
+            case SetException exception:
+                {
+                    Debug.WriteLine(exception.Ex.Message);
+                    _logger.AddLog(exception.Ex, $"{exception.Message}, {exception.Details}");
+                }
+                break;
+            default:
+                _logger.AddLog("unknown message", LogType.Error, new Data(m.ToString() ?? ""));
                 break;
         }
     }
@@ -392,28 +418,21 @@ class McvCoreActor : ReceiveActor
     }
     private static void ExtractZipFile(string zipFilePath, string appDirPath)
     {
-        try
+        using var archive = ZipFile.OpenRead(zipFilePath);
+        foreach (var entry in archive.Entries)
         {
-            using var archive = ZipFile.OpenRead(zipFilePath);
-            foreach (var entry in archive.Entries)
+            var entryPath = Path.Combine(appDirPath, entry.FullName);
+            var entryDir = Path.GetDirectoryName(entryPath);
+            if (entryDir is not null && !Directory.Exists(entryDir))
             {
-                var entryPath = Path.Combine(appDirPath, entry.FullName);
-                var entryDir = Path.GetDirectoryName(entryPath);
-                if (entryDir is not null && !Directory.Exists(entryDir))
-                {
-                    Directory.CreateDirectory(entryDir);
-                }
-
-                var entryFn = Path.GetFileName(entryPath);
-                if (!string.IsNullOrEmpty(entryFn))
-                {
-                    entry.ExtractToFile(entryPath, true);
-                }
+                Directory.CreateDirectory(entryDir);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogException(ex);
+
+            var entryFn = Path.GetFileName(entryPath);
+            if (!string.IsNullOrEmpty(entryFn))
+            {
+                entry.ExtractToFile(entryPath, true);
+            }
         }
     }
 
@@ -421,6 +440,8 @@ class McvCoreActor : ReceiveActor
     private readonly string _appDirPath = "";
     internal async Task SetMessageAsync(INotifyMessageV2 message)
     {
+        Debug.WriteLine($"McvCoreActor::SetMessageAsync(INotifyMessageV2): {message}");
+        _logger.AddLog($"McvCoreActor::SetMessageAsync(INotifyMessageV2): {message}", LogType.Debug);
         switch (message)
         {
             case NotifySiteConnected connected:
@@ -436,6 +457,8 @@ class McvCoreActor : ReceiveActor
     }
     internal async Task<IReplyMessageToPluginV2> RequestMessageAsync(IGetMessageToCoreV2 message)
     {
+        Debug.WriteLine($"McvCoreActor::RequestMessageAsync(IGetMessageToCoreV2): {message}");
+        _logger.AddLog($"McvCoreActor::RequestMessageAsync(IGetMessageToCoreV2): {message}", LogType.Debug);
         switch (message)
         {
             case RequestLoadPluginOptions reqPluginOptions:
@@ -450,8 +473,16 @@ class McvCoreActor : ReceiveActor
                 }
             case GetConnectionStatus reqConnSt:
                 {
-                    var connSt = GetConnectionStatus(reqConnSt.ConnId);
-                    return new ReplyConnectionStatus(connSt);
+                    try
+                    {
+                        var connSt = GetConnectionStatus(reqConnSt.ConnId);
+                        return new ReplyConnectionStatus(connSt);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.AddLog(ex);
+                        return new ErrorOccurred(ex);
+                    }
                 }
             case GetAppName _:
                 {
@@ -491,7 +522,7 @@ class McvCoreActor : ReceiveActor
                     }
                     catch (Exception ex)
                     {
-                        _coreLogger.LogException(ex);
+                        _logger.AddLog(ex);
                     }
                     if (version is not null && url is not null)
                     {
@@ -553,7 +584,7 @@ class McvCoreActor : ReceiveActor
         }
         catch (Exception ex)
         {
-            _logger.LogException(ex);
+            _logger.AddLog(ex);
         }
     }
     internal void ShowPluginSettingsPanel(PluginId pluginId)
@@ -622,7 +653,7 @@ class McvCoreActor : ReceiveActor
 
         _splashVm.AddLog("プラグインの読み込み");
         var pluginHost = new PluginHost(this);
-        var plugins = PluginLoader.LoadPlugins(_coreOptions.PluginDir);
+        var plugins = PluginLoader.LoadPlugins(_coreOptions.PluginDir, _logger);
         AddPlugins(plugins, pluginHost);
 
         //var options = LoadOptions(GetOptionsPath(), logger);
@@ -644,7 +675,7 @@ class McvCoreActor : ReceiveActor
     {
     }
 
-    private static IMcvCoreOptions LoadOptions(string optionsPath, ILogger logger)
+    private static IMcvCoreOptions LoadOptions(string optionsPath, ICoreLogger logger)
     {
         var options = new McvCoreOptions();
         try
@@ -655,7 +686,7 @@ class McvCoreActor : ReceiveActor
         }
         catch (Exception ex)
         {
-            logger.LogException(ex);
+            logger.AddLog(ex);
         }
         return options;
     }
@@ -664,13 +695,14 @@ class McvCoreActor : ReceiveActor
         var defaultSite = await GetDefaultSite();
         if (defaultSite is null)
         {
-            _coreLogger.Log("siteが無い");
+            Debug.WriteLine("siteが無い");
             var k = await _pluginManager.Ask<List<IPluginInfo>>(new GetPluginList());
             if (k is not null)
             {
                 var plugins = k.Where(p => PluginTypeChecker.IsSitePlugin(p.Roles)).ToList().Select(k => k.Name);
                 var s = string.Join(",", plugins);
-                _coreLogger.Log(s);
+                Debug.WriteLine(s);
+                _logger.AddLog("siteが無い", LogType.Error);
             }
 
             return;
@@ -775,8 +807,8 @@ class McvCoreActor : ReceiveActor
         SetMessageToPluginManager(target, message);
         await Task.CompletedTask;
     }
-    public static Props Props()
+    public static Props Props(ICoreLogger logger)
     {
-        return Akka.Actor.Props.Create(() => new McvCoreActor()).WithDispatcher("akka.actor.synchronized-dispatcher");
+        return Akka.Actor.Props.Create(() => new McvCoreActor(logger)).WithDispatcher("akka.actor.synchronized-dispatcher");
     }
 }

@@ -14,7 +14,7 @@ namespace Mcv.Core.V1
         //名前にICONを使っている場合を考慮してIEnumerable<IMessagePart>をそのまま保存したい。
         //
         private readonly string _dbPath;
-        private readonly ILogger _logger;
+        private readonly ICoreLogger _logger;
         private readonly ConcurrentDictionary<string, McvUser> _cacheDict = new();
         private static readonly object _createTableLockObject = new object();
         public event EventHandler<McvUser>? UserAdded;
@@ -93,11 +93,11 @@ namespace Mcv.Core.V1
             {
                 //ここに来るようなことは殆ど無いかと。ストレージの空き容量が無いとかそんなレベル
                 //ryu_s.MyCommon.ExceptionLogger.Logging(ryu_s.MyCommon.LogLevel.error, ex);
-                _logger.LogException(ex);
+                _logger.AddLog(ex);
             }
             return list;
         }
-        public SQLiteUserStore(string dbPath, ILogger logger)
+        public SQLiteUserStore(string dbPath, ICoreLogger logger)
         {
             _dbPath = dbPath;
             _logger = logger;
@@ -252,7 +252,7 @@ namespace Mcv.Core.V1
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                _logger.LogException(ex);
+                _logger.AddLog(ex);
             }
         }
         public void Save()
@@ -421,7 +421,7 @@ namespace Mcv.Core.V1
             catch (Exception ex)
             {
                 //ここに来るようなことは殆ど無いかと。ストレージの空き容量が無いとかそんなレベル
-                _logger.LogException(ex);
+                _logger.AddLog(ex);
                 userInfo = null;
                 return false;
             }

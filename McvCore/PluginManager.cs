@@ -28,85 +28,158 @@ class PluginManagerActor : ReceiveActor
     /// PluginRolesが登録されるまでの間、仮でNameを保持するためのDictionary
     /// </summary>
     private readonly ConcurrentDictionary<PluginId, PrePlguinInfo> _prePluginDict = new();
-    public static Props Props()
+    private readonly ICoreLogger _logger;
+
+    public static Props Props(ICoreLogger logger)
     {
-        return Akka.Actor.Props.Create(() => new PluginManagerActor()).WithDispatcher("akka.actor.synchronized-dispatcher");
+        return Akka.Actor.Props.Create(() => new PluginManagerActor(logger)).WithDispatcher("akka.actor.synchronized-dispatcher");
     }
-    public PluginManagerActor()
+    public PluginManagerActor(ICoreLogger logger)
     {
+        _logger = logger;
         Receive<AddPlugins>(m =>
         {
-            foreach (var plugin in m.Plugins)
+            try
             {
-                AddPlugin(plugin, m.PluginHost);
+                foreach (var plugin in m.Plugins)
+                {
+                    AddPlugin(plugin, m.PluginHost);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
             }
         });
         Receive<RemovePlugin>(m =>
         {
-            RemovePlugin(m.PluginId);
+            try
+            {
+                RemovePlugin(m.PluginId);
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<SetPluginRole>(m =>
         {
-            var id = m.PluginId;
-            if (_prePluginDict.TryGetValue(id, out var prePlugin))
+            try
             {
-                _prePluginDict.TryRemove(id, out var _);
-                var pluginInfo = new PluginInfo(prePlugin.Id, prePlugin.Name, m.PluginRole);
-                _pluginInfoDict.TryAdd(id, pluginInfo);
+                var id = m.PluginId;
+                if (_prePluginDict.TryGetValue(id, out var prePlugin))
+                {
+                    _prePluginDict.TryRemove(id, out var _);
+                    var pluginInfo = new PluginInfo(prePlugin.Id, prePlugin.Name, m.PluginRole);
+                    _pluginInfoDict.TryAdd(id, pluginInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
             }
         });
         Receive<GetPluginList>(m =>
         {
-            Sender.Tell(GetPluginList());
+            try
+            {
+                Sender.Tell(GetPluginList());
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<SetNotifyToAPlugin>(m =>
         {
-            var target = GetPluginActorById(m.PluginId);
-            if (target == null)
+            try
             {
-                return;
+                var target = GetPluginActorById(m.PluginId);
+                if (target == null)
+                {
+                    return;
+                }
+                target.Tell(new NotifyMessageV2(m.Message));
             }
-            target.Tell(new NotifyMessageV2(m.Message));
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<SetNotifyToAllPlugin>(m =>
         {
-            foreach (var target in GetActors())
+            try
             {
-                target.Tell(new NotifyMessageV2(m.Message));
+                foreach (var target in GetActors())
+                {
+                    target.Tell(new NotifyMessageV2(m.Message));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
             }
         });
         Receive<SetSetToAPlugin>(m =>
         {
-            var target = GetPluginActorById(m.PluginId);
-            if (target == null)
+            try
             {
-                return;
+                var target = GetPluginActorById(m.PluginId);
+                if (target == null)
+                {
+                    return;
+                }
+                target.Tell(new SetMessageToPluginV2(m.Message));
             }
-            target.Tell(new SetMessageToPluginV2(m.Message));
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<SetSetToAllPlugin>(m =>
         {
-            foreach (var target in GetActors())
+            try
             {
-                target.Tell(new SetMessageToPluginV2(m.Message));
+                foreach (var target in GetActors())
+                {
+                    target.Tell(new SetMessageToPluginV2(m.Message));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
             }
         });
         ReceiveAsync<GetMessage>(async m =>
         {
-            Sender.Tell(await RequestMessage(m.PluginId, m.Message));
+            try
+            {
+                Sender.Tell(await RequestMessage(m.PluginId, m.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
         Receive<GetDefaultSite>(m =>
         {
-            Sender.Tell(GetDefaultSite());
+            try
+            {
+                Sender.Tell(GetDefaultSite());
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
         });
     }
-    private static IActorRef CreateActor(IPlugin plugin)
+    private static IActorRef CreateActor(IPlugin plugin, ICoreLogger logger)
     {
-        return Context.ActorOf(PluginActor.Props(plugin).WithDispatcher("akka.actor.synchronized-dispatcher"));
+        return Context.ActorOf(PluginActor.Props(plugin, logger).WithDispatcher("akka.actor.synchronized-dispatcher"));
     }
     public void AddPlugin(IPlugin plugin, IPluginHost host)
     {
-        var actor = CreateActor(plugin);
+        var actor = CreateActor(plugin, _logger);
         _actorDict.TryAdd(plugin.Id, actor);
         _prePluginDict.TryAdd(plugin.Id, new PrePlguinInfo(plugin.Id, plugin.Name));
         plugin.Host = host;

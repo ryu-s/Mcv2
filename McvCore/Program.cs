@@ -11,6 +11,7 @@ using System.Windows.Threading;
 namespace Mcv.Core;
 class Program
 {
+    static readonly ICoreLogger _logger = new LoggerTest();
     [STAThread]
     static void Main()
     {
@@ -35,14 +36,14 @@ class Program
         Directory.CreateDirectory("settings");
 
         var actorSystem = ActorSystem.Create("mcv");
-        var deadletterWatchMonitorProps = Props.Create(() => new DeadletterMonitor());
+        var deadletterWatchMonitorProps = Props.Create(() => new DeadletterMonitor(_logger));
         var deadletterWatchActorRef = actorSystem.ActorOf(deadletterWatchMonitorProps, "DeadLetterMonitoringActor");
         actorSystem.EventStream.Subscribe(deadletterWatchActorRef, typeof(Akka.Event.DeadLetter));
 
         var monitorActor = actorSystem.ActorOf<UnhandledMessagesMonitorActor>();
         actorSystem.EventStream.Subscribe(monitorActor, typeof(Akka.Event.UnhandledMessage));
 
-        var actor = actorSystem.ActorOf(McvCoreActor.Props(), "coreActor");
+        var actor = actorSystem.ActorOf(McvCoreActor.Props(_logger), "coreActor");
 
 
         var t = actorSystem.WhenTerminated;
@@ -68,6 +69,7 @@ class Program
         catch (Exception ex)
         {
             Debug.WriteLine(ex.Message);
+            _logger.AddLog(ex);
         }
     }
 
@@ -87,24 +89,28 @@ class Program
         if (ex is not null)
         {
             Debug.WriteLine(ex.Message);
+            _logger.AddLog(ex);
         }
 
     }
 }
-public class DeadletterMonitor : ReceiveActor
+class DeadletterMonitor : ReceiveActor
 {
+    private readonly ICoreLogger _logger;
 
-    public DeadletterMonitor()
+    public DeadletterMonitor(ICoreLogger logger)
     {
         Receive<Akka.Event.DeadLetter>(dl => HandleDeadletter(dl));
+        _logger = logger;
     }
 
     private void HandleDeadletter(Akka.Event.DeadLetter dl)
     {
         Debug.WriteLine($"DeadLetter captured: {dl.Message}, sender: {dl.Sender}, recipient: {dl.Recipient}");
+        _logger.AddLog($"DeadLetter captured: {dl.Message}, sender: {dl.Sender}, recipient: {dl.Recipient}", LogType.Error);
     }
 }
-public class UnhandledMessagesMonitorActor : ReceiveActor
+class UnhandledMessagesMonitorActor : ReceiveActor
 {
     public UnhandledMessagesMonitorActor()
     {

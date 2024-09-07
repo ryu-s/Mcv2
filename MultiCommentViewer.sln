@@ -99,6 +99,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mcv.LineLiveSitePluginTests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mcv.NicoSitePluginTests", "Mcv.NicoSitePluginTests\Mcv.NicoSitePluginTests.csproj", "{1083DEA0-14E1-4DF2-A1D3-DB38B4954C77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McvCoreTests", "McvCoreTests\McvCoreTests.csproj", "{A6110A27-13E9-4BC7-BD6D-D032027F53AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Alpha|Any CPU = Alpha|Any CPU
@@ -427,6 +429,14 @@ Global
 		{1083DEA0-14E1-4DF2-A1D3-DB38B4954C77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1083DEA0-14E1-4DF2-A1D3-DB38B4954C77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1083DEA0-14E1-4DF2-A1D3-DB38B4954C77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Alpha|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Alpha|Any CPU.Build.0 = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Beta|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Beta|Any CPU.Build.0 = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6110A27-13E9-4BC7-BD6D-D032027F53AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
