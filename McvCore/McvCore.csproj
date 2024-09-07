@@ -68,29 +68,9 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Mcv.BigoIF\Mcv.BigoIF.csproj" />
-    <ProjectReference Include="..\Mcv.BigoSitePlugin\Mcv.BigoSitePlugin.csproj" />
     <ProjectReference Include="..\BrowserCookiePlugin\BrowserCookiePlugin.csproj" />
     <ProjectReference Include="..\MainViewPlugin\MainViewPlugin.csproj" />
     <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
-    <ProjectReference Include="..\Mcv.MirrativIF\Mcv.MirrativIF.csproj" />
-    <ProjectReference Include="..\Mcv.MirrativSitePlugin\Mcv.MirrativSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.MixchIF\Mcv.MixchIF.csproj" />
-    <ProjectReference Include="..\Mcv.MixchSitePlugin\Mcv.MixchSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.NicoLiveIF\Mcv.NicoLiveIF.csproj" />
-    <ProjectReference Include="..\Mcv.NicoSitePlugin\Mcv.NicoSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.OpenrecIF\Mcv.OpenrecIF.csproj" />
-    <ProjectReference Include="..\Mcv.OpenrecSitePlugin\Mcv.OpenrecSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.ShowRoomIF\Mcv.ShowRoomIF.csproj" />
-    <ProjectReference Include="..\Mcv.ShowRoomSitePlugin\Mcv.ShowRoomSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.TwicasIF\Mcv.TwicasIF.csproj" />
-    <ProjectReference Include="..\Mcv.TwicasSitePlugin\Mcv.TwicasSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.TwitchIF\Mcv.TwitchIF.csproj" />
-    <ProjectReference Include="..\Mcv.TwitchSitePlugin\Mcv.TwitchSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.WhowatchIF\Mcv.WhowatchIF.csproj" />
-    <ProjectReference Include="..\Mcv.WhowatchSitePlugin\Mcv.WhowatchSitePlugin.csproj" />
-    <ProjectReference Include="..\Mcv.YouTubeLiveIF\Mcv.YouTubeLiveIF.csproj" />
-    <ProjectReference Include="..\Mcv.YouTubeLiveSitePlugin\Mcv.YouTubeLiveSitePlugin.csproj" />
   </ItemGroup>
   <Target Name="PostBuildMacros">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
