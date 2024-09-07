@@ -1004,7 +1004,6 @@ namespace Mcv.MainViewPlugin
             new YouTubeMessageProcessor(),
             new TwitchMessageProcessor(),
             new BigoMessageProcessor(),
-            new MildomMessageProcessor(),
             new MirrativMessageProcessor(),
             new NicoLiveMessageProcessor(),
             new MixchMessageProcessor(),
