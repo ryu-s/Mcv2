@@ -10,10 +10,24 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mcv.Core;
+class PrePlguinInfo(PluginId id, string name)
+{
+    public PluginId Id { get; } = id;
+    public string Name { get; } = name;
+}
+class PluginInfo(PluginId id, string name, List<string> roles) : PrePlguinInfo(id, name), IPluginInfo
+{
+    public List<string> Roles { get; } = roles;
+}
 class PluginManagerActor : ReceiveActor
 {
     private readonly ConcurrentDictionary<PluginId, IActorRef> _actorDict = new();
-    private readonly ConcurrentDictionary<PluginId, IList<string>> _pluginRoleDict = new();
+    private readonly ConcurrentDictionary<PluginId, IPluginInfo> _pluginInfoDict = new();
+    /// <summary>
+    /// 
+    /// PluginRolesが登録されるまでの間、仮でNameを保持するためのDictionary
+    /// </summary>
+    private readonly ConcurrentDictionary<PluginId, PrePlguinInfo> _prePluginDict = new();
     public static Props Props()
     {
         return Akka.Actor.Props.Create(() => new PluginManagerActor()).WithDispatcher("akka.actor.synchronized-dispatcher");
@@ -33,7 +47,13 @@ class PluginManagerActor : ReceiveActor
         });
         Receive<SetPluginRole>(m =>
         {
-            _pluginRoleDict.TryAdd(m.PluginId, m.PluginRole);
+            var id = m.PluginId;
+            if (_prePluginDict.TryGetValue(id, out var prePlugin))
+            {
+                _prePluginDict.TryRemove(id, out var _);
+                var pluginInfo = new PluginInfo(prePlugin.Id, prePlugin.Name, m.PluginRole);
+                _pluginInfoDict.TryAdd(id, pluginInfo);
+            }
         });
         Receive<GetPluginList>(m =>
         {
@@ -88,6 +108,7 @@ class PluginManagerActor : ReceiveActor
     {
         var actor = CreateActor(plugin);
         _actorDict.TryAdd(plugin.Id, actor);
+        _prePluginDict.TryAdd(plugin.Id, new PrePlguinInfo(plugin.Id, plugin.Name));
         plugin.Host = host;
         actor.Tell(new SetMessageToPluginV2(new SetLoading()));
         //Plugin側がHelloメッセージを送ってくるまで登録はしない。
@@ -95,7 +116,7 @@ class PluginManagerActor : ReceiveActor
     internal List<IPluginInfo> GetPluginList()
     {
         //このメソッドはPluginManagerの外部から参照できるから、HelloメッセージによってPluginRoleを登録済みのプラグインのみを返す。
-        return _pluginRoleDict.Select(kv => _actorDict[kv.Key]).Cast<IPluginInfo>().ToList();
+        return [.. _pluginInfoDict.Values];
     }
     private IEnumerable<IActorRef> GetActors()
     {
@@ -103,7 +124,7 @@ class PluginManagerActor : ReceiveActor
     }
     internal PluginId? GetDefaultSite()
     {
-        return _pluginRoleDict.Where(p => PluginTypeChecker.IsSitePlugin(p.Value)).Select(p => p.Key).FirstOrDefault();
+        return _pluginInfoDict.Where(p => PluginTypeChecker.IsSitePlugin(p.Value.Roles)).Select(p => p.Key).FirstOrDefault();
     }
     /// <summary>
     /// 指定したプラグインに対してGetMessageを送る
@@ -137,7 +158,7 @@ class PluginManagerActor : ReceiveActor
     {
         try
         {
-            _pluginRoleDict.Remove(pluginId, out var _);
+            _pluginInfoDict.Remove(pluginId, out var _);
             _actorDict.Remove(pluginId, out var _);
         }
         catch (Exception ex)
