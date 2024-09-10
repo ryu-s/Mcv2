@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <Configurations>Release;Beta;Alpha;Debug</Configurations>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>embedded</DebugType>
+    <Optimize>true</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Beta|AnyCPU'">
+    <OutputPath>bin\Beta\</OutputPath>
+    <DefineConstants>TRACE;BETA</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>true</Optimize>
+    <DebugType>embedded</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'">
+    <OutputPath>bin\Alpha\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;ALPHA</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mcv.BigoIF\Mcv.BigoIF.csproj" />
+    <ProjectReference Include="..\Mcv.LineLiveIF\Mcv.LineLiveIF.csproj" />
+    <ProjectReference Include="..\Mcv.MirrativIF\Mcv.MirrativIF.csproj" />
+    <ProjectReference Include="..\Mcv.MixchIF\Mcv.MixchIF.csproj" />
+    <ProjectReference Include="..\Mcv.NicoLiveIF\Mcv.NicoLiveIF.csproj" />
+    <ProjectReference Include="..\Mcv.OpenrecIF\Mcv.OpenrecIF.csproj" />
+    <ProjectReference Include="..\Mcv.ShowRoomIF\Mcv.ShowRoomIF.csproj" />
+    <ProjectReference Include="..\Mcv.TwicasIF\Mcv.TwicasIF.csproj" />
+    <ProjectReference Include="..\Mcv.TwitchIF\Mcv.TwitchIF.csproj" />
+    <ProjectReference Include="..\Mcv.WhowatchIF\Mcv.WhowatchIF.csproj" />
+    <ProjectReference Include="..\Mcv.YouTubeLiveIF\Mcv.YouTubeLiveIF.csproj" />
+    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
+  </ItemGroup>
+
+</Project>
