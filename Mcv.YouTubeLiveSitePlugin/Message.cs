@@ -214,13 +214,26 @@ namespace Mcv.YouTubeLiveSitePlugin
                 case ryu_s.YouTubeLive.Message.ITextPart text:
                     return MessagePartFactory.CreateMessageText(text.Raw);
                 case ryu_s.YouTubeLive.Message.EmojiPart emoji:
-                    return new MessageSvgImage
+                    if (emoji.Url.EndsWith(".png"))
                     {
-                        Url = emoji.Url,
-                        Alt = emoji.EmojiId,
-                        Height = 24,
-                        Width = 24,
-                    };
+                        return new MessageImage
+                        {
+                            Url = emoji.Url,
+                            Alt = emoji.EmojiId,
+                            Height = 24,
+                            Width = 24,
+                        };
+                    }
+                    else
+                    {
+                        return new MessageSvgImage
+                        {
+                            Url = emoji.Url,
+                            Alt = emoji.EmojiId,
+                            Height = 24,
+                            Width = 24,
+                        };
+                    }
                 case ryu_s.YouTubeLive.Message.CustomEmojiPart custom:
                     return new MessageImage
                     {
