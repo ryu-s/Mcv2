@@ -6,18 +6,16 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <Nullable>enable</Nullable>
     <Configurations>Release;Beta;Alpha;Debug</Configurations>
+    <OutputPath>..\Output\$(Configuration)\plugins\$(MSBuildProjectName)</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Beta|AnyCPU'">
-    <OutputPath>bin\Beta\</OutputPath>
     <DefineConstants>TRACE;BETA</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <Optimize>true</Optimize>
@@ -26,7 +24,6 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'">
-    <OutputPath>bin\Alpha\</OutputPath>
     <DefineConstants>TRACE;DEBUG;ALPHA</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugType>embedded</DebugType>
@@ -34,7 +31,6 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugType>embedded</DebugType>

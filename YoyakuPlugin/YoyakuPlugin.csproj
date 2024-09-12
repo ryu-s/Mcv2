@@ -28,7 +28,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'">
-    <OutputPath>bin\Alpha\</OutputPath>
+    <OutputPath>..\Output\Alpha\plugins\YoyakuPlugin</OutputPath>
     <DefineConstants>TRACE;DEBUG;ALPHA</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugType>embedded</DebugType>
