@@ -14,12 +14,12 @@ namespace MirrativSitePluginTests
             var data = "{\"push_image_url\":\"\",\"speech\":\"\",\"d\":1,\"ac\":\"Mirrativ bot\",\"burl\":\"https://www.mirrativ.com/assets/img/ic_badge_S.png?v2\",\"iurl\":\"https://cdn.mirrativ.com/mirrorman-prod/image/profile_image/ce6c9a48c7d08228af072c7de32fc750f237311c0755f95a7693c88e27cf1d90_m.jpeg?1508489473\",\"cm\":\"シェイク検知：60秒間、画面共有を停止するよ。再シェイクすると画面共有を再開できるよ！\",\"created_at\":1546438220,\"u\":\"1540862\",\"is_moderator\":0,\"lci\":1331546385,\"t\":1}";
             var json = Codeplex.Data.DynamicJson.Parse(data);
             var message = MirrativSitePlugin.Tools.ParseType1Data(json);
-            Assert.AreEqual("シェイク検知：60秒間、画面共有を停止するよ。再シェイクすると画面共有を再開できるよ！", message.Comment);
-            Assert.AreEqual(1546438220, message.CreatedAt);
-            Assert.AreEqual("1331546385", message.Id);
-            Assert.AreEqual("1540862", message.UserId);
-            Assert.AreEqual("Mirrativ bot", message.Username);
-            Assert.AreEqual(MessageType.Comment, message.Type);
+            Assert.That("シェイク検知：60秒間、画面共有を停止するよ。再シェイクすると画面共有を再開できるよ！", Is.EqualTo(message.Comment));
+            Assert.That(1546438220, Is.EqualTo(message.CreatedAt));
+            Assert.That("1331546385", Is.EqualTo(message.Id));
+            Assert.That("1540862", Is.EqualTo(message.UserId));
+            Assert.That("Mirrativ bot", Is.EqualTo(message.Username));
+            Assert.That(MessageType.Comment, Is.EqualTo(message.Type));
         }
         [Test]
         public void Test1()
@@ -28,20 +28,19 @@ namespace MirrativSitePluginTests
             MessageParser.GetCurrent = () => new DateTime(2019, 12, 9, 1, 2, 3);
             var message = MessageParser.ParseMessage(data, (msg, type) => { });
             var photoGift = message as MirrativPhotoGift;
-            Assert.IsNotNull(photoGift);
-            Assert.IsNull(photoGift.BUrl);
-            Assert.AreEqual(300, photoGift.Coins);
-            Assert.AreEqual("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ", photoGift.Text);
-            Assert.IsNull(photoGift.GiftSmallImageUrl);
-            Assert.AreEqual("かわいいエモモスナップ(300)", photoGift.GiftTitle);
-            Assert.IsNull(photoGift.Id);
-            Assert.AreEqual(MirrativMessageType.Item, photoGift.MirrativMessageType);
-            Assert.AreEqual("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ", photoGift.Text);
-            Assert.IsNull(photoGift.PhotoGiftId);
-            Assert.AreEqual(new DateTime(2019, 12, 9, 1, 2, 3), photoGift.PostedAt);
-            Assert.AreEqual("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ", photoGift.ShareText);
-            Assert.AreEqual(SiteType.Mirrativ, photoGift.SiteType);
-            Assert.AreEqual("4353835", photoGift.UserId);
+            Assert.That(photoGift?.BUrl, Is.Null);
+            Assert.That(photoGift?.Coins, Is.EqualTo(300));
+            Assert.That(photoGift?.Text, Is.EqualTo("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ"));
+            Assert.That(photoGift?.GiftSmallImageUrl, Is.Null);
+            Assert.That(photoGift?.GiftTitle, Is.EqualTo("かわいいエモモスナップ(300)"));
+            Assert.That(photoGift?.Id, Is.Null);
+            Assert.That(photoGift?.MirrativMessageType, Is.EqualTo(MirrativMessageType.Item));
+            Assert.That(photoGift?.Text, Is.EqualTo("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ"));
+            Assert.That(photoGift?.PhotoGiftId, Is.Null);
+            Assert.That(photoGift?.PostedAt, Is.EqualTo(new DateTime(2019, 12, 9, 1, 2, 3)));
+            Assert.That(photoGift?.ShareText, Is.EqualTo("@KURORO966_Blackさん,@akatukihawk3さん,@usausa_otomeさん,@0609_spitzさん,@uru_umiさん,カルルンバ🎨さんとの  #エモモスナップ！ #エモモ #ミラティブ"));
+            Assert.That(photoGift?.SiteType, Is.EqualTo(SiteType.Mirrativ));
+            Assert.That(photoGift?.UserId, Is.EqualTo("4353835"));
         }
         [Test]
         public void Test2()
@@ -50,10 +49,10 @@ namespace MirrativSitePluginTests
             MessageParser.GetCurrent = () => new DateTime(2019, 12, 9, 1, 0, 0);
             var message = MessageParser.ParseMessage(data, (msg, type) => { });
             var gift = message as MirrativGift;
-            Assert.IsNotNull(gift);
-            Assert.AreEqual(8, gift.Count);
-            Assert.AreEqual("🐾真顔ちゃん'-'🍊🍌🕊🐶🌱🍵が小さな星を8個贈りました", gift.Text);
-            Assert.AreEqual("🐾真顔ちゃん'-'🍊🍌🕊🐶🌱🍵", gift.UserName);
+            Assert.That(gift, Is.Not.Null);
+            Assert.That(gift.Count, Is.EqualTo(8));
+            Assert.That(gift.Text, Is.EqualTo("🐾真顔ちゃん'-'🍊🍌🕊🐶🌱🍵が小さな星を8個贈りました"));
+            Assert.That(gift.UserName, Is.EqualTo("🐾真顔ちゃん'-'🍊🍌🕊🐶🌱🍵"));
         }
         /// <summary>
         /// 小さなハート
@@ -65,10 +64,10 @@ namespace MirrativSitePluginTests
             MessageParser.GetCurrent = () => new DateTime(2019, 12, 9, 1, 0, 0);
             var message = MessageParser.ParseMessage(data, (msg, type) => { });
             var gift = message as MirrativGift;
-            Assert.IsNotNull(gift);
-            Assert.AreEqual(1, gift.Count);
-            Assert.AreEqual("さぶさぶはらぐちが小さなハートを1個贈りました", gift.Text);
-            Assert.AreEqual("さぶさぶはらぐち", gift.UserName);
+            Assert.That(gift, Is.Not.Null);
+            Assert.That(gift.Count, Is.EqualTo(1));
+            Assert.That(gift.Text, Is.EqualTo("さぶさぶはらぐちが小さなハートを1個贈りました"));
+            Assert.That(gift.UserName, Is.EqualTo("さぶさぶはらぐち"));
         }
     }
 }

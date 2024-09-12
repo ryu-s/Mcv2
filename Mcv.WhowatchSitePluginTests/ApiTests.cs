@@ -23,11 +23,11 @@ namespace WhowatchSitePluginTests
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CookieContainer>())).Returns(Task.FromResult(data));
             var cc = new CookieContainer();
             var liveData = await Api.GetLiveDataAsync(serverMock.Object, live_id, lastUpdatedAt, cc);
-            Assert.AreEqual("👼🏻こっちん様🎀のライブ", liveData.Live.Title);
-            Assert.AreEqual(1532194251671, liveData.UpdatedAt);
-            Assert.AreEqual(413277878, liveData.Comments[0].Id);
-            Assert.AreEqual(1003, liveData.Comments[0].User.Id);
-            Assert.AreEqual("匿名係長ただの花火師", liveData.Comments[0].User.Name);
+            Assert.That(liveData.Live.Title, Is.EqualTo("👼🏻こっちん様🎀のライブ"));
+            Assert.That(liveData.UpdatedAt, Is.EqualTo(1532194251671));
+            Assert.That(liveData.Comments[0].Id, Is.EqualTo(413277878));
+            Assert.That(liveData.Comments[0].User.Id, Is.EqualTo(1003));
+            Assert.That(liveData.Comments[0].User.Name, Is.EqualTo("匿名係長ただの花火師"));
         }
         [Test]
         public async Task GetProfileTest()
@@ -38,11 +38,11 @@ namespace WhowatchSitePluginTests
             serverMock.Setup(s => s.GetAsync("https://api.whowatch.tv/users/" + userPath + "/profile", It.IsAny<CookieContainer>())).Returns(Task.FromResult(data));
             var cc = new CookieContainer();
             var profile = await Api.GetProfileAsync(serverMock.Object, userPath, cc);
-            Assert.AreEqual("👼🏻こっちん様🎀", profile.Name);
-            Assert.AreEqual("ふ:koto0316", profile.AccountName);
-            Assert.AreEqual(7005919, profile.Live.Id);
-            Assert.AreEqual("👼🏻こっちん様🎀のライブ", profile.Live.Title);
-            Assert.AreEqual(1532189547000, profile.Live.StartedAt);
+            Assert.That(profile.Name, Is.EqualTo("👼🏻こっちん様🎀"));
+            Assert.That(profile.AccountName, Is.EqualTo("ふ:koto0316"));
+            Assert.That(profile.Live.Id, Is.EqualTo(7005919));
+            Assert.That(profile.Live.Title, Is.EqualTo("👼🏻こっちん様🎀のライブ"));
+            Assert.That(profile.Live.StartedAt, Is.EqualTo(1532189547000));
         }
         [Test]
         public async Task MeTest()
@@ -52,9 +52,9 @@ namespace WhowatchSitePluginTests
             serverMock.Setup(s => s.GetAsync("https://api.whowatch.tv/users/me", It.IsAny<CookieContainer>())).Returns(Task.FromResult(ret));
             var cc = new CookieContainer();
             var me = await Api.GetMeAsync(serverMock.Object, cc);
-            Assert.AreEqual("@kv510k", me.AccountName);
-            Assert.AreEqual("t:kv510k", me.UserPath);
-            Assert.AreEqual("Ryu", me.Name);
+            Assert.That(me.AccountName, Is.EqualTo("@kv510k"));
+            Assert.That(me.UserPath, Is.EqualTo("t:kv510k"));
+            Assert.That(me.Name, Is.EqualTo("Ryu"));
         }
         [Test]
         public async Task GetPlayItems()
@@ -65,7 +65,7 @@ namespace WhowatchSitePluginTests
             serverMock.Setup(s => s.GetAsync("https://api.whowatch.tv/playitems")).Returns(Task.FromResult(data));
             var dict = await Api.GetPlayItemsAsync(server);
             var item = dict[182];
-            Assert.AreEqual("大花火", item.Name);
+            Assert.That(item.Name, Is.EqualTo("大花火"));
         }
     }
 }

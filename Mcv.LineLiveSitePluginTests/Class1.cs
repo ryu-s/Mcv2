@@ -16,7 +16,7 @@ namespace LineLiveSitePluginTests
         public void Test()
         {
             var s = Tools.Deserialize<LineLiveSitePlugin.Low.LiveInfo.RootObject>(_data);
-            Assert.AreEqual("wss://cast-chat-026.line-apps.com/chat/app/8376753/WzKgAtbWPPJbtbXwPMxvMCeUibBqXyqg", s.Chat.Url);
+            Assert.That("wss://cast-chat-026.line-apps.com/chat/app/8376753/WzKgAtbWPPJbtbXwPMxvMCeUibBqXyqg", Is.EqualTo(s.Chat.Url));
         }
 
         [Test]
@@ -31,9 +31,9 @@ namespace LineLiveSitePluginTests
             var s = "{\"type\":\"message\",\"data\":{\"message\":\"え、この歌もええ！！！\",\"sender\":{\"id\":7781129,\"hashedId\":\"YaBPX9N1BF\",\"displayName\":\"abc\",\"iconUrl\":\"https://scdn.line-apps.com/obs/0h786ri4KAaBcLC0S_mDIXQDNWbmByJWtfcy9zMjINY3QvaXoTZ20uJXsLZHRxP3pDNzpwJS5YNnMhOS1IMA/f64x64\",\"hashedIconId\":\"0h786ri4KAaBcLC0S_mDIXQDNWbmByJWtfcy9zMjINY3QvaXoTZ20uJXsLZHRxP3pDNzpwJS5YNnMhOS1IMA\",\"isGuest\":false,\"isBlocked\":false},\"sentAt\":1526748828,\"isNGMessage\":false,\"key\":\"3127985.7781129000000000\",\"roomId\":\"gypkYEkazJsEmdZnqlTmFTrraGbyJnPG\"}}";
             var (data, sender) = Tools.Parse(s);
             var message = data as IMessageData;
-            Assert.IsNotNull(message);
-            Assert.AreEqual("え、この歌もええ！！！", message.Message);
-            Assert.AreEqual("abc", sender.DisplayName);
+            Assert.That(message, Is.Not.Null);
+            Assert.That("え、この歌もええ！！！", Is.EqualTo(message.Message));
+            Assert.That("abc", Is.EqualTo(sender.DisplayName));
         }
         [Test]
         public void LoveParseTest()
@@ -41,7 +41,7 @@ namespace LineLiveSitePluginTests
             var s = "{\"type\":\"love\",\"data\":{\"quantity\":1,\"sender\":{\"id\":4555519,\"hashedId\":\"6cuz94hm5I\",\"displayName\":\"よっちゃん\",\"iconUrl\":\"https://scdn.line-apps.com/obs/0hINkqtsQ5FmFWCDkVBrNpNm5VEBYvJhUpLiwNRG8MGgEpOVdibWdeBHEBS1J7bFU0P2tbBnALQFUuPFhgOA/f64x64\",\"hashedIconId\":\"0hINkqtsQ5FmFWCDkVBrNpNm5VEBYvJhUpLiwNRG8MGgEpOVdibWdeBHEBS1J7bFU0P2tbBnALQFUuPFhgOA\",\"isGuest\":false,\"isBlocked\":false},\"roomId\":\"gypkYEkazJsEmdZnqlTmFTrraGbyJnPG\",\"sentAt\":1526748863}}";
             var (data, sender) = Tools.Parse(s);
             var message = data as ILove;
-            Assert.AreEqual(1, message.Quantity);
+            Assert.That(1, Is.EqualTo(message.Quantity));
         }
         [Test]
         public void BulkParseTest()

@@ -17,8 +17,8 @@ namespace MirrativSitePluginTests
             var serverMock = new Mock<IDataServer>();
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CookieContainer>())).Returns(Task.FromResult(data));
             var currentUser = await Api.GetCurrentUserAsync(serverMock.Object, null);
-            Assert.AreEqual("4566407", currentUser.UserId);
-            Assert.AreEqual("Ryu", currentUser.Name);
+            Assert.That("4566407", Is.EqualTo(currentUser.UserId));
+            Assert.That("Ryu", Is.EqualTo(currentUser.Name));
         }
         [Test]
         public async Task GetCurrentUserAsync_NotLoggedInDataTest()
@@ -27,7 +27,7 @@ namespace MirrativSitePluginTests
             var serverMock = new Mock<IDataServer>();
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CookieContainer>())).Returns(Task.FromResult(data));
             var currentUser = await Api.GetCurrentUserAsync(serverMock.Object, null);
-            Assert.IsFalse(currentUser.IsLoggedIn);
+            Assert.That(currentUser.IsLoggedIn, Is.False);
         }
         [Test]
         public async Task GetLiveInfoTest()
@@ -39,8 +39,8 @@ namespace MirrativSitePluginTests
             serverMock.Setup(s => s.GetAsync(url, It.IsAny<Dictionary<string, string>>())).Returns(Task.FromResult(data));
             var server = serverMock.Object;
             var ret = await Api.GetLiveInfo(server, liveId);
-            Assert.AreEqual("PUBG全力参加待ち(*´ー｀*)初見さんつかまえる #ハロウィンガチャ", ret.Title);
-            Assert.AreEqual("118f91f:UdoBre1M", ret.Broadcastkey);
+            Assert.That("PUBG全力参加待ち(*´ー｀*)初見さんつかまえる #ハロウィンガチャ", Is.EqualTo(ret.Title));
+            Assert.That("118f91f:UdoBre1M", Is.EqualTo(ret.Broadcastkey));
         }
         //[Test]
         //public async Task Test2()

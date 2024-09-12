@@ -17,7 +17,7 @@ namespace OpenrecSitePluginTests
         {
             var data = DataLoader.GetSampleData(@"blacklists.txt");
             var serverMock = new Mock<IDataSource>();
-            serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string,string>>())).ReturnsAsync(data);
+            serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>())).ReturnsAsync(data);
             var context = new Context("", "");
             var blacklist = await API.GetBanList(serverMock.Object, context);
 
@@ -29,8 +29,8 @@ namespace OpenrecSitePluginTests
             var serverMock = new Mock<IDataSource>();
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CookieContainer>())).ReturnsAsync(data);
             var me = await API.GetMeAsync(serverMock.Object, new CookieContainer());
-            Assert.AreEqual("たこやき", me.DisplayName);
-            Assert.AreEqual("kv510k", me.UserPath);
+            Assert.That(me.DisplayName, Is.EqualTo("たこやき"));
+            Assert.That(me.UserPath, Is.EqualTo("kv510k"));
         }
         [Test]
         public async Task GetMeAsync_NotLoggedIn_Test()
@@ -39,8 +39,8 @@ namespace OpenrecSitePluginTests
             var serverMock = new Mock<IDataSource>();
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CookieContainer>())).ReturnsAsync(data);
             var me = await API.GetMeAsync(serverMock.Object, new CookieContainer());
-            Assert.IsTrue(string.IsNullOrEmpty(me.DisplayName));
-            Assert.IsTrue(string.IsNullOrEmpty(me.UserPath));
+            Assert.That(string.IsNullOrEmpty(me.DisplayName), Is.True);
+            Assert.That(string.IsNullOrEmpty(me.UserPath), Is.True);
         }
         [Test]
         public async Task GetMovieInfoTests()
@@ -50,8 +50,8 @@ namespace OpenrecSitePluginTests
             var serverMock = new Mock<IDataSource>();
             serverMock.Setup(s => s.GetAsync("https://public.openrec.tv/external/api/v5/movies/" + liveId, It.IsAny<CookieContainer>())).ReturnsAsync(data);
             var info = await API.GetMovieInfo(serverMock.Object, liveId, new CookieContainer());
-            Assert.AreEqual("FkJTQSjkQps", info.Id);
-            Assert.AreEqual(993793, info.MovieId);
+            Assert.That(info.Id, Is.EqualTo("FkJTQSjkQps"));
+            Assert.That(info.MovieId, Is.EqualTo(993793));
         }
     }
 }

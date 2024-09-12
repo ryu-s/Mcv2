@@ -22,14 +22,14 @@ namespace TwicasSitePluginTests
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CookieContainer>())).Returns(Task.FromResult(data));
             var server = serverMock.Object;
             var (comments, raw) = await API.GetListAll(server, "", 0, 0, 0, 0, new System.Net.CookieContainer());
-            Assert.AreEqual(20, comments.Length);
+            Assert.That(comments.Length, Is.EqualTo(20));
             var c = comments[0];
-            Assert.AreEqual("comment", c.Type);
-            Assert.AreEqual(1583166022000, c.CreatedAt);
-            Assert.IsNull(c.HtmlMessage);
-            Assert.AreEqual(17919844422, c.Id);
-            Assert.AreEqual("次いでによっちゃんも残して死なないで", c.Message);
-            Assert.AreEqual("エコハ@🍃", c.Author.Name);
+            Assert.That(c.Type, Is.EqualTo("comment"));
+            Assert.That(c.CreatedAt, Is.EqualTo(1583166022000));
+            Assert.That(c.HtmlMessage, Is.Null);
+            Assert.That(c.Id, Is.EqualTo(17919844422));
+            Assert.That(c.Message, Is.EqualTo("次いでによっちゃんも残して死なないで"));
+            Assert.That(c.Author.Name, Is.EqualTo("エコハ@🍃"));
         }
     }
 }

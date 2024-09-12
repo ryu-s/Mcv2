@@ -20,9 +20,9 @@ namespace LineLiveSitePluginTests
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>())).Returns(Task.FromResult(data));
             var server = serverMock.Object;
             var res = await Api.GetPromptyStats(server, "", "");
-            Assert.AreEqual("LIVE", res.LiveStatus);
-            Assert.AreEqual(200, res.Status);
-            Assert.AreEqual(200, res.ApiStatusCode);
+            Assert.That(res.LiveStatus, Is.EqualTo("LIVE"));
+            Assert.That(res.Status, Is.EqualTo(200));
+            Assert.That(res.ApiStatusCode, Is.EqualTo(200));
         }
     }
 }

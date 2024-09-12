@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using TwitchSitePlugin;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace TwitchSitePluginTests
 {
@@ -12,8 +13,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 001 justinfan12345 :Welcome, GLHF!";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("001", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("001"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "Welcome, GLHF!" }, result.Params);
         }
         [Test]
@@ -21,8 +22,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 002 justinfan12345 :Your host is tmi.twitch.tv";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("002", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("002"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "Your host is tmi.twitch.tv" }, result.Params);
         }
         [Test]
@@ -30,8 +31,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 003 justinfan12345 :This server is rather new";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("003", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("003"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "This server is rather new" }, result.Params);
         }
         [Test]
@@ -39,8 +40,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 004 justinfan12345 :-";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("004", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("004"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "-" }, result.Params);
         }
         [Test]
@@ -48,8 +49,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":justinfan12345.tmi.twitch.tv 353 justinfan12345 = #gugu2525 :justinfan12345";
             var result = Tools.Parse(s);
-            Assert.AreEqual("justinfan12345.tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("353", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("justinfan12345.tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("353"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "=", "#gugu2525", "justinfan12345" }, result.Params);
         }
         [Test]
@@ -57,8 +58,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":justinfan12345.tmi.twitch.tv 366 justinfan12345 #gugu2525 :End of /NAMES list";
             var result = Tools.Parse(s);
-            Assert.AreEqual("justinfan12345.tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("366", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("justinfan12345.tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("366"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "#gugu2525", "End of /NAMES list" }, result.Params);
         }
         [Test]
@@ -66,8 +67,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 372 justinfan12345 :You are in a maze of twisty passages, all alike.";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("372", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("372"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "You are in a maze of twisty passages, all alike." }, result.Params);
         }
         [Test]
@@ -75,8 +76,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 375 justinfan12345 :-";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("375", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("375"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", "-" }, result.Params);
         }
         [Test]
@@ -84,8 +85,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":tmi.twitch.tv 376 justinfan12345 :>";
             var result = Tools.Parse(s);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("376", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("376"));
             CollectionAssert.AreEquivalent(new List<string> { "justinfan12345", ">" }, result.Params);
         }
         [Test]
@@ -93,8 +94,8 @@ namespace TwitchSitePluginTests
         {
             var s = ":justinfan12345!justinfan12345@justinfan12345.tmi.twitch.tv JOIN #gugu2525";
             var result = Tools.Parse(s);
-            Assert.AreEqual("justinfan12345!justinfan12345@justinfan12345.tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("JOIN", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("justinfan12345!justinfan12345@justinfan12345.tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("JOIN"));
             CollectionAssert.AreEquivalent(new List<string> { "#gugu2525" }, result.Params);
         }
         [Test]
@@ -117,8 +118,8 @@ namespace TwitchSitePluginTests
                 { "user-id","156711248"},
                 { "user-type",""},
             }, result.Tags);
-            Assert.AreEqual("clllp!clllp@clllp.tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("PRIVMSG", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("clllp!clllp@clllp.tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("PRIVMSG"));
             CollectionAssert.AreEquivalent(new List<string> { "#gugu2525", "意識過剰もほどほどに" }, result.Params);
         }
         [Test]
@@ -127,8 +128,8 @@ namespace TwitchSitePluginTests
             var s = ":jtv!jtv@jtv.tmi.twitch.tv PRIVMSG 3lis_game :GamesFan34260 is now hosting you.";
             var result = Tools.Parse(s);
             var commentData = Tools.ParsePrivMsg(result);
-            Assert.AreEqual("jtv!jtv@jtv.tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("PRIVMSG", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("jtv!jtv@jtv.tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("PRIVMSG"));
             CollectionAssert.AreEquivalent(new List<string> { "3lis_game", "GamesFan34260 is now hosting you." }, result.Params);
         }
         [Test]
@@ -150,8 +151,8 @@ namespace TwitchSitePluginTests
                 { "subs-only","0"},
             };
             CollectionAssert.AreEquivalent(dict, result.Tags);
-            Assert.AreEqual("tmi.twitch.tv", result.Prefix);
-            Assert.AreEqual("ROOMSTATE", result.Command);
+            Assert.That(result.Prefix, Is.EqualTo("tmi.twitch.tv"));
+            Assert.That(result.Command, Is.EqualTo("ROOMSTATE"));
             CollectionAssert.AreEquivalent(new List<string> { "#gugu2525" }, result.Params);
         }
     }

@@ -15,11 +15,11 @@ namespace TwitchSitePluginTests
             var serverMock = new Mock<IDataServer>();
             var webSocket = new Mock<IMessageProvider>();
             var site = new TwitchSiteContext(serverMock.Object, loggerMock.Object);
-            Assert.IsTrue(site.IsValidInput("https://www.twitch.tv/abc"));
-            Assert.IsTrue(site.IsValidInput("https://www.twitch.tv/abc?"));
-            Assert.IsTrue(site.IsValidInput("https://www.twitch.tv/abc/"));
-            Assert.IsFalse(site.IsValidInput("https://www.twitch.tv/"));
-            Assert.IsFalse(site.IsValidInput("https://www.twitch.tv/?"));
+            Assert.That(site.IsValidInput("https://www.twitch.tv/abc"), Is.True);
+            Assert.That(site.IsValidInput("https://www.twitch.tv/abc?"), Is.True);
+            Assert.That(site.IsValidInput("https://www.twitch.tv/abc/"), Is.True);
+            Assert.That(site.IsValidInput("https://www.twitch.tv/"), Is.False);
+            Assert.That(site.IsValidInput("https://www.twitch.tv/?"), Is.False);
         }
     }
 }

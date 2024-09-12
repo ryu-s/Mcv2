@@ -27,17 +27,17 @@ namespace WhowatchSitePluginTests
             var message = MessageParser.ParseShoutMessage(internalMessage);
 
             var shout = message as IWhowatchItem;
-            Assert.IsNotNull(shout);
-            Assert.AreEqual("ふ:satorou", shout.AccountName);
-            Assert.AreEqual("メガホンをプレゼントしました。", shout.Comment);
-            Assert.AreEqual(568502964, shout.Id);
-            Assert.AreEqual(1547574410000, shout.PostedAt);
-            Assert.AreEqual(12764231, shout.UserId);
-            Assert.AreEqual("🔹SAPPOROイケチャン🔹休止中", shout.UserName);
-            Assert.AreEqual("w:satorou", shout.UserPath);
-            Assert.AreEqual(WhowatchMessageType.Item, shout.WhowatchMessageType);
-            Assert.AreEqual(1, shout.ItemCount);
-            Assert.AreEqual("メガホン", shout.ItemName);
+            Assert.That(shout, Is.Not.Null);
+            Assert.That(shout?.AccountName, Is.EqualTo("ふ:satorou"));
+            Assert.That(shout?.Comment, Is.EqualTo("メガホンをプレゼントしました。"));
+            Assert.That(shout?.Id, Is.EqualTo(568502964));
+            Assert.That(shout?.PostedAt, Is.EqualTo(1547574410000));
+            Assert.That(shout?.UserId, Is.EqualTo(12764231));
+            Assert.That(shout?.UserName, Is.EqualTo("🔹SAPPOROイケチャン🔹休止中"));
+            Assert.That(shout?.UserPath, Is.EqualTo("w:satorou"));
+            Assert.That(shout?.WhowatchMessageType, Is.EqualTo(WhowatchMessageType.Item));
+            Assert.That(shout?.ItemCount, Is.EqualTo(1));
+            Assert.That(shout?.ItemName, Is.EqualTo("メガホン"));
         }
         [Test]
         public async Task WhowatchByOwnerParseTest()
@@ -48,70 +48,69 @@ namespace WhowatchSitePluginTests
             var message = MessageParser.ParseShoutMessage(internalMessage);
 
             var shout = message as IWhowatchComment;
-            Assert.IsNotNull(shout);
-            Assert.AreEqual("@kv510k", shout.AccountName);
-            Assert.AreEqual("てｓｔ", shout.Comment);
-            Assert.AreEqual("714170546", shout.Id);
-            Assert.AreEqual("03:52:58", shout.PostTime);
-            Assert.AreEqual("1072838", shout.UserId);
-            Assert.AreEqual("Ryu", shout.UserName);
-            Assert.AreEqual("t:kv510k", shout.UserPath);
-            Assert.AreEqual(WhowatchMessageType.Comment, shout.WhowatchMessageType);
+            Assert.That(shout, Is.Not.Null);
+            Assert.That(shout?.AccountName, Is.EqualTo("@kv510k"));
+            Assert.That(shout?.Comment, Is.EqualTo("てｓｔ"));
+            Assert.That(shout?.Id, Is.EqualTo("714170546"));
+            Assert.That(shout?.PostTime, Is.EqualTo("03:52:58"));
+            Assert.That(shout?.UserId, Is.EqualTo("1072838"));
+            Assert.That(shout?.UserName, Is.EqualTo("Ryu"));
+            Assert.That(shout?.UserPath, Is.EqualTo("t:kv510k"));
         }
         [Test]
         public void Test()
         {
             var data = "[null,null,\"room:9184711\",\"shout\",{\"a\"}]";
             var message = MessageParser.ParseRawString2InternalMessage(data);
-            Assert.IsNull(message.JoinRef);
-            Assert.IsNull(message.Ref);
-            Assert.AreEqual("room:9184711", message.Topic);
-            Assert.AreEqual("shout", message.Event);
-            Assert.AreEqual("{\"a\"}", message.Payload);
+            Assert.That(message.JoinRef, Is.Null);
+            Assert.That(message.Ref, Is.Null);
+            Assert.That(message.Topic, Is.EqualTo("room:9184711"));
+            Assert.That(message.Event, Is.EqualTo("shout"));
+            Assert.That(message.Payload, Is.EqualTo("{\"a\"}"));
         }
         [Test]
         public void Test1()
         {
             var data = "[\"1\",null,\"room:9184711\",\"shout\",{\"a\"}]";
             var message = MessageParser.ParseRawString2InternalMessage(data);
-            Assert.AreEqual(1, message.JoinRef);
-            Assert.IsNull(message.Ref);
-            Assert.AreEqual("room:9184711", message.Topic);
-            Assert.AreEqual("shout", message.Event);
-            Assert.AreEqual("{\"a\"}", message.Payload);
+            Assert.That(message.JoinRef, Is.EqualTo(1));
+            Assert.That(message.Ref, Is.Null);
+            Assert.That(message.Topic, Is.EqualTo("room:9184711"));
+            Assert.That(message.Event, Is.EqualTo("shout"));
+            Assert.That(message.Payload, Is.EqualTo("{\"a\"}"));
         }
         [Test]
         public void Test2()
         {
             var data = "[null,\"1\",\"room:9184711\",\"shout\",{\"a\"}]";
             var message = MessageParser.ParseRawString2InternalMessage(data);
-            Assert.AreEqual(1, message.Ref);
-            Assert.IsNull(message.JoinRef);
-            Assert.AreEqual("room:9184711", message.Topic);
-            Assert.AreEqual("shout", message.Event);
-            Assert.AreEqual("{\"a\"}", message.Payload);
+            Assert.That(message.Ref, Is.EqualTo(1));
+            Assert.That(message.JoinRef, Is.Null);
+            Assert.That(message.Topic, Is.EqualTo("room:9184711"));
+            Assert.That(message.Event, Is.EqualTo("shout"));
+            Assert.That(message.Payload, Is.EqualTo("{\"a\"}"));
         }
         [Test]
         public void Test3()
         {
             var data = "[\"1\",\"1\",\"room:9184711\",\"shout\",{\"a\"}]";
             var message = MessageParser.ParseRawString2InternalMessage(data);
-            Assert.AreEqual(1, message.JoinRef);
-            Assert.AreEqual(1, message.Ref);
-            Assert.AreEqual("room:9184711", message.Topic);
-            Assert.AreEqual("shout", message.Event);
-            Assert.AreEqual("{\"a\"}", message.Payload);
+            Assert.That(message.JoinRef, Is.EqualTo(1));
+            Assert.That(message.Ref, Is.EqualTo(1));
+            Assert.That(message.Topic, Is.EqualTo("room:9184711"));
+            Assert.That(message.Event, Is.EqualTo("shout"));
+            Assert.That(message.Payload, Is.EqualTo("{\"a\"}"));
         }
         [Test]
         public void NGCommentParseTest()
         {
             var data = "[null,null,\"room:10030668\",\"shout\",{\"topic\":\"room_pub:10030668\",\"event\":\"shout\",\"comment\":{\"user\":{\"user_profile\":{},\"user_path\":\"w:ryu_s\",\"name\":\"Ryu\",\"is_admin\":false,\"id\":1614280,\"icon_url\":\"\",\"account_name\":\"ふ:ryu_s\"},\"tts\":{},\"reply_to_user_id\":0,\"posted_at\":1553429971000,\"original_message\":\"あいうえお\",\"not_escaped\":false,\"ng_word_included\":true,\"message\":\"この投稿は視聴者には表示されません。\",\"live_id\":10030668,\"is_silent_comment\":true,\"is_reply_to_me\":false,\"id\":633344989,\"escaped_original_message\":\"<span class=\\\"ngword\\\">あいうえお</span>\",\"escaped_message\":\"この投稿は視聴者には表示されません。\",\"enabled\":true,\"comment_type\":\"BY_FOLLOWER\",\"anonymized\":false}}]";
             var internalMessage = MessageParser.ParseRawString2InternalMessage(data);
-            Assert.AreEqual(WhowatchInternalMessageType.Shout, internalMessage.InternalMessageType);
+            Assert.That(internalMessage.InternalMessageType, Is.EqualTo(WhowatchInternalMessageType.Shout));
             var message = MessageParser.ParseShoutMessage(internalMessage);
             var ngComment = message as IWhowatchNgComment;
-            Assert.IsNotNull(ngComment);
-            Assert.AreEqual("あいうえお", ngComment.OriginalMessage);
+            Assert.That(ngComment, Is.Not.Null);
+            Assert.That(ngComment?.OriginalMessage, Is.EqualTo("あいうえお"));
         }
 
     }

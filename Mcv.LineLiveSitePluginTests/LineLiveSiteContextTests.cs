@@ -19,25 +19,25 @@ namespace LineLiveSitePluginTests
         public void IsValidInput_null_Test()
         {
             var context = CreateSiteContext();
-            Assert.IsFalse(context.IsValidInput(null));
+            Assert.That(context.IsValidInput(null), Is.False);
         }
         [Test]
         public void IsValidInput_ChannelUrl_Test()
         {
             var context = CreateSiteContext();
-            Assert.IsTrue(context.IsValidInput("https://live.line.me/channels/14578&test"));
+            Assert.That(context.IsValidInput("https://live.line.me/channels/14578&test"), Is.True);
         }
         [Test]
         public void IsValidInput_LiveUrl_Test()
         {
             var context = CreateSiteContext();
-            Assert.IsTrue(context.IsValidInput("https://live.line.me/channels/14578/broadcast/8840007&test"));
+            Assert.That(context.IsValidInput("https://live.line.me/channels/14578/broadcast/8840007&test"), Is.True);
         }
         [Test]
         public void IsValidInput_Invalid_Input_Test()
         {
             var context = CreateSiteContext();
-            Assert.IsFalse(context.IsValidInput("abc"));
+            Assert.That(context.IsValidInput("abc"), Is.False);
         }
     }
 }

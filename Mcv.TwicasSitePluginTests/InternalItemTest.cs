@@ -19,7 +19,7 @@ namespace TwicasSitePluginTests
             var streamChecker = StreamChecker2.ParseStreamChcker(data);
             var itemLow = streamChecker.Items[0];
             var item = new InternalItem(itemLow);
-            Assert.AreEqual("お茶ｘ10", item.Name);
+            Assert.That(item.Name, Is.EqualTo("お茶ｘ10"));
 
         }
     }

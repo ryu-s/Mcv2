@@ -21,7 +21,7 @@ namespace MainViewPluginTests
             };
             options.Set(aa);
 
-            Assert.AreEqual(options.BackColor, Colors.Blue);
+            Assert.That(options.BackColor, Is.EqualTo(Colors.Blue));
         }
     }
 }

@@ -18,7 +18,7 @@ namespace WhowatchSitePluginTests
             options.LiveCheckIntervalSec = 555;
             var clone = options.Clone();
             options.LiveCheckIntervalSec = 777;
-            Assert.AreEqual(555, clone.LiveCheckIntervalSec);
+            Assert.That(clone.LiveCheckIntervalSec, Is.EqualTo(555));
         }
     }
 }

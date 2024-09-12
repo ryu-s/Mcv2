@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using Mcv.PluginV2;
+using NUnit.Framework.Legacy;
 
 namespace TwitchSitePluginTests
 {

@@ -16,7 +16,7 @@ namespace YouTubeLiveSitePluginTests
             serverMock.Setup(s => s.GetEnAsync(It.IsAny<string>())).Returns(Task.FromResult(data));
             var channelUrl = ChannelUrlTools.CreateChannelUrl("https://youtube.com/channel/test");
             var a = await ChannelLiveFinder.FindLiveVidsAsync(serverMock.Object, channelUrl);
-            Assert.AreEqual(new List<string> { "83xdTGcVYcg" }, a);
+            Assert.That(a, Is.EqualTo(new List<string> { "83xdTGcVYcg" }));
         }
     }
 }

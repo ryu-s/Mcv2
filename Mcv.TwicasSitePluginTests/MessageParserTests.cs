@@ -19,12 +19,12 @@ namespace TwicasSitePluginTests
                 + "{\"type\":\"comment\",\"id\":17484180395,\"message\":\"\\u6b21\\u306f\\u77e5\\u3089\\u306a\\u3044\\u30b2\\u30b9\\u30c8\\u3055\\u3093\\u3068\\u7d61\\u3081\\u308b\\u5834\\u3068\\u5272\\u308a\\u5207\\u308d\\u3046\",\"rawMessage\":\"\\u6b21\\u306f\\u77e5\\u3089\\u306a\\u3044\\u30b2\\u30b9\\u30c8\\u3055\\u3093\\u3068\\u7d61\\u3081\\u308b\\u5834\\u3068\\u5272\\u308a\\u5207\\u308d\\u3046\",\"hasMention\":false,\"createdAt\":1577551368000,\"specialImage\":null,\"author\":{\"id\":\"c:sugarwater\",\"name\":\"\\u3055\\u3068\\u3046\\u307f\\u305a\",\"screenName\":\"c:sugarwater\",\"profileImage\":\"\\/\\/imagegw02.twitcasting.tv\\/image3\\/img-twitcasting.s3-us-west-1.amazonaws.com\\/5f\\/0b\\/5c0e8523e7a78_64.jpg?dev\",\"grade\":1},\"numComments\":37019}"
                 + "]";
             var list = MessageParser.Parse(data);
-            Assert.AreEqual(2, list.Count);
+            Assert.That(list.Count, Is.EqualTo(2));
             var comment1 = list[0] as InternalComment;
-            Assert.AreEqual(17484180373, comment1.Id);
+            Assert.That(comment1?.Id, Is.EqualTo(17484180373));
 
             var comment2 = list[1] as InternalComment;
-            Assert.AreEqual(17484180395, comment2.Id);
+            Assert.That(comment2?.Id, Is.EqualTo(17484180395));
         }
     }
 }

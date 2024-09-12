@@ -35,36 +35,36 @@ namespace YouTubeLiveSitePluginTests
         {
             _manager.CountLimit = 1;
             _manager.CountCheckTimeRangeMin = 1;
-            Assert.IsTrue(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)));
+            Assert.That(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)), Is.True);
             SetTime(new DateTime(1970, 1, 1, 0, 0, 0));
-            Assert.IsFalse(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)));
+            Assert.That(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)), Is.False);
         }
         [Test]
         public void 規定回数が0回の場合は一切リロードできない()
         {
             _manager.CountLimit = 0;
             _manager.CountCheckTimeRangeMin = 1;
-            Assert.IsFalse(_manager.CanReload());
+            Assert.That(_manager.CanReload(), Is.False);
         }
         [Test]
         public void 規定回数が大きい数値でもOutOfRange等の例外を出さないか()
         {
             _manager.CountLimit = 100;
             _manager.CountCheckTimeRangeMin = 1;
-            Assert.IsTrue(_manager.CanReload());
+            Assert.That(_manager.CanReload(), Is.True);
             SetTime(new DateTime(1970, 1, 1, 0, 0, 0));
-            Assert.IsTrue(_manager.CanReload());
+            Assert.That(_manager.CanReload(), Is.True);
             SetTime(new DateTime(1970, 1, 1, 0, 2, 0));
-            Assert.IsTrue(_manager.CanReload());
+            Assert.That(_manager.CanReload(), Is.True);
         }
         [Test]
         public void 一定時間を過ぎた場合はリロード回数がリセットされるか()
         {
             _manager.CountLimit = 1;
             _manager.CountCheckTimeRangeMin = 1;
-            Assert.IsTrue(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)));
+            Assert.That(CanReload(new DateTime(1970, 1, 1, 0, 0, 0)), Is.True);
             SetTime(new DateTime(1970, 1, 1, 0, 0, 0));
-            Assert.IsTrue(CanReload(new DateTime(1970, 1, 1, 0, 2, 0)));
+            Assert.That(CanReload(new DateTime(1970, 1, 1, 0, 2, 0)), Is.True);
         }
     }
 }

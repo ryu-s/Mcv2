@@ -23,25 +23,25 @@ namespace OpenrecSitePluginTests
             var serverMock = new Mock<IDataSource>();
             serverMock.Setup(s => s.GetAsync("https://public.openrec.tv/external/api/v5/movies?channel_id=FkJTQSjkQps")).ReturnsAsync("[" + "]");
             serverMock.Setup(s => s.GetAsync("https://public.openrec.tv/external/api/v5/movies?channel_id=Matomo_SV")).ReturnsAsync("[" + data + "]");
-            Assert.AreEqual("FkJTQSjkQps", await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/live/FkJTQSjkQps"));
-            Assert.AreEqual("FkJTQSjkQps", await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/user/Matomo_SV"));
-            Assert.AreEqual("FkJTQSjkQps", await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/live/Matomo_SV"));
+            Assert.That(await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/live/FkJTQSjkQps"), Is.EqualTo("FkJTQSjkQps"));
+            Assert.That(await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/user/Matomo_SV"), Is.EqualTo("FkJTQSjkQps"));
+            Assert.That(await Tools.GetLiveId(serverMock.Object, "https://www.openrec.tv/live/Matomo_SV"), Is.EqualTo("FkJTQSjkQps"));
 
         }
         [Test]
         public void IsValidUrlTest()
         {
-            Assert.IsTrue(Tools.IsValidUrl("https://www.openrec.tv/live/mizLXCyaDLk"));
-            Assert.IsTrue(Tools.IsValidUrl("https://www.openrec.tv/movie/mizLXCyaDLk"));
-            Assert.IsFalse(Tools.IsValidUrl("https://www.openrec.tv/a/mizLXCyaDLk"));
+            Assert.That(Tools.IsValidUrl("https://www.openrec.tv/live/mizLXCyaDLk"), Is.True);
+            Assert.That(Tools.IsValidUrl("https://www.openrec.tv/movie/mizLXCyaDLk"), Is.True);
+            Assert.That(Tools.IsValidUrl("https://www.openrec.tv/a/mizLXCyaDLk"), Is.False);
 
         }
         [Test]
         public void ExtractLiveIdTest()
         {
-            Assert.AreEqual("mizLXCyaDLk", Tools.ExtractLiveId("https://www.openrec.tv/live/mizLXCyaDLk"));
-            Assert.AreEqual("mizLXCyaDLk", Tools.ExtractLiveId("https://www.openrec.tv/movie/mizLXCyaDLk"));
-            Assert.AreEqual("", Tools.ExtractLiveId("https://www.openrec.tv/a/mizLXCyaDLk"));
+            Assert.That(Tools.ExtractLiveId("https://www.openrec.tv/live/mizLXCyaDLk"), Is.EqualTo("mizLXCyaDLk"));
+            Assert.That(Tools.ExtractLiveId("https://www.openrec.tv/movie/mizLXCyaDLk"), Is.EqualTo("mizLXCyaDLk"));
+            Assert.That(Tools.ExtractLiveId("https://www.openrec.tv/a/mizLXCyaDLk"), Is.EqualTo(""));
         }
         [Test]
         public void WebsocketMessageType0ParseTest()
@@ -49,9 +49,9 @@ namespace OpenrecSitePluginTests
             var data = DataLoader.GetSampleData("Websocket\\MessageType0.txt");
             var obj = JsonConvert.DeserializeObject<OpenrecSitePlugin.Low.Item>(data);
             var comment = Tools.Parse(obj);
-            Assert.AreEqual("運だけ〜", comment.Message);
-            Assert.AreEqual("182743145", comment.Id);
-            Assert.IsTrue(comment.IsPremium);
+            Assert.That(comment.Message, Is.EqualTo("運だけ〜"));
+            Assert.That(comment.Id, Is.EqualTo("182743145"));
+            Assert.That(comment.IsPremium, Is.True);
         }
         [Test]
         public void ChatsParseTest()
@@ -59,10 +59,10 @@ namespace OpenrecSitePluginTests
             var data = DataLoader.GetSampleData("Chats_stamp.txt");
             var obj = JsonConvert.DeserializeObject<OpenrecSitePlugin.Low.Chats.RootObject[]>(data);
             var comment = Tools.Parse(obj[10]);
-            Assert.AreEqual("", comment.Message);
-            Assert.AreEqual("182716576", comment.Id);
-            Assert.IsTrue(comment.IsPremium);
-            Assert.AreEqual("https://dqd0jw5gvbchn.cloudfront.net/stamp/15/128/16a1341ae3788fa55c84cb05be3663825f5df7e2.png", comment.StampUrl);
+            Assert.That(comment.Message, Is.EqualTo(""));
+            Assert.That(comment.Id, Is.EqualTo("182716576"));
+            Assert.That(comment.IsPremium, Is.True);
+            Assert.That(comment.StampUrl, Is.EqualTo("https://dqd0jw5gvbchn.cloudfront.net/stamp/15/128/16a1341ae3788fa55c84cb05be3663825f5df7e2.png"));
         }
     }
 }

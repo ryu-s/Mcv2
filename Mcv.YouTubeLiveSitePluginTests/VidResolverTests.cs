@@ -13,12 +13,12 @@ namespace YouTubeLiveSitePluginTests
             var s = new VidResolver();
             var serverMock = new Mock<IYouTubeLiveServer>();
             var result1 = await s.GetVid(serverMock.Object, new WatchUrl("https://www.youtube.com/watch?v=Rs-WxTGgVus"));
-            Assert.IsTrue(result1 is IVidResult);
-            Assert.AreEqual("Rs-WxTGgVus", ((VidResult)result1).Vid);
+            Assert.That(result1, Is.InstanceOf<IVidResult>());
+            Assert.That(((VidResult)result1).Vid, Is.EqualTo("Rs-WxTGgVus"));
 
             var result2 = await s.GetVid(serverMock.Object, new WatchUrl("https://www.youtube.com/watch?v=Rs-WxTGgVus&feature=test"));
-            Assert.IsTrue(result2 is IVidResult);
-            Assert.AreEqual("Rs-WxTGgVus", ((VidResult)result2).Vid);
+            Assert.That(result2, Is.InstanceOf<IVidResult>());
+            Assert.That(((VidResult)result2).Vid, Is.EqualTo("Rs-WxTGgVus"));
         }
     }
 }

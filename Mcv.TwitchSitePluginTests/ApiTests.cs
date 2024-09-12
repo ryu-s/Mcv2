@@ -36,11 +36,11 @@ namespace TwitchSitePluginTests
             var serverMock = new Mock<IDataServer>();
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>())).Returns(Task.FromResult(data));
             var server = serverMock.Object;
-            var stream=await API.GetStreamAsync(server, "ukyochi_jp");
-            Assert.AreEqual("Shanghai, CHINA - STUFF w/ !Water jnbShiba - !Schedule !Jake !Discord !YouTube - Follow @JakenbakeLIVE", stream.Title);
-            Assert.AreEqual("32961080624", stream.LiveId);
-            Assert.AreEqual("JakenbakeLIVE", stream.Username);
-            Assert.AreEqual("live", stream.Type);
+            var stream = await API.GetStreamAsync(server, "ukyochi_jp");
+            Assert.That(stream.Title, Is.EqualTo("Shanghai, CHINA - STUFF w/ !Water jnbShiba - !Schedule !Jake !Discord !YouTube - Follow @JakenbakeLIVE"));
+            Assert.That(stream.LiveId, Is.EqualTo("32961080624"));
+            Assert.That(stream.Username, Is.EqualTo("JakenbakeLIVE"));
+            Assert.That(stream.Type, Is.EqualTo("live"));
         }
         [Test]
         public async Task GetStreamAsyncEmptyTest()
@@ -50,7 +50,7 @@ namespace TwitchSitePluginTests
             serverMock.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>())).Returns(Task.FromResult(data));
             var server = serverMock.Object;
             var stream = await API.GetStreamAsync(server, "ukyochi_jp");
-            Assert.IsNull(stream);
+            Assert.That(stream, Is.Null);
         }
     }
 }
