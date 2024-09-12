@@ -683,9 +683,9 @@ namespace Mcv.MainViewPlugin
             }
             await _host.SetMessageAsync(new SetDirectMessage(selectedSite, new SetConnectSite(connId, input, res.Cookies)));
         }
-        internal void SetDisconectSite(PluginId selectedSite, ConnectionId connId)
+        internal Task SetDisconectSiteAsync(PluginId selectedSite, ConnectionId connId)
         {
-            _host.SetMessageAsync(new SetDirectMessage(selectedSite, new SetDisconnectSite(connId)));
+            return _host.SetMessageAsync(new SetDirectMessage(selectedSite, new SetDisconnectSite(connId)));
         }
         internal void AddBrowserProfile(ProfileInfo browserProfileInfo)
         {

@@ -3,6 +3,7 @@ using Mcv.PluginV2;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Mcv.MainViewPlugin;
@@ -181,13 +182,21 @@ class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
         {
             await _adapter.SetConnectSite(SelectedSite.Id, Id, Input, _selectedBrowser.Id);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
 
         }
     }
-    private void Disconnect()
+    private async void Disconnect()
     {
-        _adapter.SetDisconectSite(SelectedSite.Id, Id);
+        try
+        {
+            await Task.CompletedTask.ConfigureAwait(false);
+            await _adapter.SetDisconectSiteAsync(SelectedSite.Id, Id);
+        }
+        catch (Exception ex)
+        {
+
+        }
     }
 }

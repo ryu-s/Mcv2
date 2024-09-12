@@ -65,13 +65,13 @@ class McvCoreActor : ReceiveActor
     {
         _pluginManager.Tell(new AddPlugins(plugins, pluginHost));
     }
-    internal void RequestCloseApp()
+    internal async Task RequestCloseAppAsync()
     {
         SetMessageToPluginManager(new SetClosing());
 
         _userStoreManager.Save();
 
-        SendErrorReport(_logger.GetLogs(), GetAppName(), GetAppVersion());
+        await SendErrorReportAsync(_logger.GetLogs(), GetAppName(), GetAppVersion());
 
         //ここで直接Context.System.Terminate()したいけど、できないから自分にメッセージを送る
         _self.Tell(new SystemShutDown());
@@ -82,7 +82,7 @@ class McvCoreActor : ReceiveActor
     /// <param name="errorData"></param>
     /// <param name="title"></param>
     /// <param name="version"></param>
-    private static void SendErrorReport(string errorData, string appName, string version)
+    private static async Task SendErrorReportAsync(string errorData, string appName, string version)
     {
         if (string.IsNullOrEmpty(errorData))
         {
@@ -107,7 +107,7 @@ class McvCoreActor : ReceiveActor
     /// <summary>
     /// error.txtがあったらサーバに送信して削除する
     /// </summary>
-    private static void SendErrorLogFile(string appName, string version)
+    private static async Task SendErrorLogFile(string appName, string version)
     {
         var errorFilePath = "error.txt";
         if (System.IO.File.Exists(errorFilePath))
@@ -117,7 +117,7 @@ class McvCoreActor : ReceiveActor
             {
                 errorContent = sr.ReadToEnd();
             }
-            SendErrorReport(errorContent, appName, version);
+            await SendErrorReportAsync(errorContent, appName, version);
             System.IO.File.Delete(errorFilePath);
         }
     }
@@ -214,7 +214,7 @@ class McvCoreActor : ReceiveActor
                         SetPluginRole(pluginHello.PluginId, pluginHello.PluginRole);
                         if (PluginTypeChecker.IsSitePlugin(pluginHello.PluginRole))
                         {
-                            var store = new V1.SQLiteUserStore(GetSettingsFilePath("users_" + pluginHello.PluginName + ".db"), _logger);
+                            var store = new V1.SQLiteUserStore(GetSettingsFilePath(pluginHello.PluginName + "_users" + ".db"), _logger);
                             store.Load();
                             _userStoreManager.SetUserStore(pluginHello.PluginId, store);
                         }
@@ -307,7 +307,7 @@ class McvCoreActor : ReceiveActor
                 SavePluginOptions(savePluginOptions.Filename, savePluginOptions.PluginOptionsRaw);
                 break;
             case SetCloseApp _:
-                RequestCloseApp();
+                await RequestCloseAppAsync();
                 break;
             case SetDirectMessage directMsg:
                 SetMessageToPluginManager(directMsg.Target, directMsg.Message);
@@ -639,11 +639,11 @@ class McvCoreActor : ReceiveActor
         //旧バージョンから移行する処理
         if (File.Exists(Path.Combine(OptionsPath, "users_YouTubeLive.db")))
         {
-            File.Move(Path.Combine(OptionsPath, "users_YouTubeLive.db"), Path.Combine(OptionsPath, "users_YouTubeLiveSitePlugin.db"));
+            File.Move(Path.Combine(OptionsPath, "users_YouTubeLive.db"), Path.Combine(OptionsPath, "YouTubeLiveSitePlugin_users.db"));
         }
         if (File.Exists(Path.Combine(OptionsPath, "users_Twitch.db")))
         {
-            File.Move(Path.Combine(OptionsPath, "users_Twitch.db"), Path.Combine(OptionsPath, "users_TwitchSitePlugin.db"));
+            File.Move(Path.Combine(OptionsPath, "users_Twitch.db"), Path.Combine(OptionsPath, "TwitchSitePlugin_users.db"));
         }
 
         _splashVm.AddLog("設定の読み込み");
