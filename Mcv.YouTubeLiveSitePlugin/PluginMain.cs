@@ -82,7 +82,8 @@ namespace Mcv.YouTubeLiveSitePlugin
             {
                 case SetLoading _:
                     {
-                        _context = new YouTubeLiveSiteContext(new YouTubeLiveServer(), new Logger(Host));
+                        var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+                        _context = new YouTubeLiveSiteContext(new YouTubeLiveServer(userAgent), new Logger(Host));
                         var res = await Host.RequestMessageAsync(new RequestLoadPluginOptions(Name)) as ReplyPluginOptions;
                         _context.LoadOptions(res.RawOptions);
                         await Host.SetMessageAsync(new SetPluginHello(Id, Name, Roles));

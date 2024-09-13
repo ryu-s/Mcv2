@@ -11,6 +11,11 @@ namespace Mcv.YouTubeLiveSitePlugin
 {
     public class YouTubeLiveServer : ServerBase, IYouTubeLiveServer
     {
+        private readonly string _userAgent;
+        public YouTubeLiveServer(string userAgent)
+        {
+            _userAgent = userAgent;
+        }
         public async Task<string> GetAsync(HttpOptions options)
         {
             var ret = await GetInternalAsync(options);
@@ -23,7 +28,7 @@ namespace Mcv.YouTubeLiveSitePlugin
             {
                 Url = url,
                 Cc = cc,
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0",
+                UserAgent = _userAgent,
             };
             return GetAsync(options);
         }
@@ -32,7 +37,7 @@ namespace Mcv.YouTubeLiveSitePlugin
             var options = new HttpOptions
             {
                 Url = url,
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0",
+                UserAgent = _userAgent,
             };
             return GetAsync(options);
         }
@@ -42,7 +47,7 @@ namespace Mcv.YouTubeLiveSitePlugin
             var options = new HttpOptions
             {
                 Url = url,
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0",
+                UserAgent = _userAgent,
                 AcceptLanguages = new List<StringWithQualityHeaderValue>
                 {
                     new StringWithQualityHeaderValue("en-US"),
@@ -61,7 +66,7 @@ namespace Mcv.YouTubeLiveSitePlugin
         /// <exception cref="TaskCanceledException"></exception>
         public async Task<string> PostAsync(string url, Dictionary<string, string> data, CookieContainer cc)
         {
-            var userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.2924.87 Safari/537.36";
+            var userAgent = _userAgent;
             var options = new HttpOptions
             {
                 Url = url,
@@ -87,7 +92,7 @@ namespace Mcv.YouTubeLiveSitePlugin
         }
         public async Task<byte[]> GetBytesAsync(string url)
         {
-            var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
+            var userAgent = _userAgent;
             var options = new HttpOptions
             {
                 Url = url,
