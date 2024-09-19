@@ -316,11 +316,11 @@ class McvCoreActor : ReceiveActor
                 {
                     await DownloadFileAsync(updateToLatest.Url, _zipFilePath);
 
-                    //list.txtに記載されているファイル全てに.oldを付加            
+                    //uninstall_info.txtに記載されているファイル全てに.oldを付加            
                     try
                     {
                         var list = new List<string>();
-                        using (var sr = new System.IO.StreamReader(System.IO.Path.Combine(_appDirPath, "list.txt")))
+                        using (var sr = new System.IO.StreamReader(System.IO.Path.Combine(_appDirPath, "uninstall_info.txt")))
                         {
                             while (!sr.EndOfStream)
                             {
