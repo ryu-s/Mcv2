@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -19,7 +18,6 @@ using System.Windows;
 using System.Windows.Threading;
 
 namespace Mcv.Core;
-
 class McvCoreActor : ReceiveActor
 {
     private readonly ConnectionManager _connManager;
@@ -29,6 +27,7 @@ class McvCoreActor : ReceiveActor
     private static readonly string MainViewPluginOptionsPath = Path.Combine("settings", "MainViewPlugin.txt");
     private readonly ICoreLogger _logger;
     private IMcvCoreOptions _coreOptions = default!;
+    private readonly Updater _updater;
     private void SetMessageToPluginManager(ISetMessageToPluginV2 message)
     {
         _pluginManager.Tell(new SetSetToAllPlugin(message));
@@ -135,6 +134,13 @@ class McvCoreActor : ReceiveActor
         _self = Self;
         _appDirPath = AppContext.BaseDirectory;
         _logger = logger;
+        _updater = new Updater(logger);
+        _updater.ProgressChanged += (s, e) =>
+        {
+            Debug.WriteLine(e);
+            var message = new NotifyDownloadProgress(e);
+            SetMessageToPluginManager(message);
+        };
         var io = new IOTest();
         _pluginManager = Context.ActorOf(PluginManagerActor.Props(logger));
 
@@ -313,81 +319,7 @@ class McvCoreActor : ReceiveActor
                 SetMessageToPluginManager(directMsg.Target, directMsg.Message);
                 break;
             case RequestUpdate updateToLatest:
-                {
-                    await DownloadFileAsync(updateToLatest.Url, _zipFilePath);
-
-                    //uninstall_info.txtに記載されているファイル全てに.oldを付加            
-                    try
-                    {
-                        var list = new List<string>();
-                        using (var sr = new System.IO.StreamReader(System.IO.Path.Combine(_appDirPath, "uninstall_info.txt")))
-                        {
-                            while (!sr.EndOfStream)
-                            {
-                                var filename = sr.ReadLine();
-                                if (!string.IsNullOrEmpty(filename))
-                                    list.Add(filename);
-                            }
-                        }
-                        foreach (var filename in list)
-                        {
-                            if (filename.StartsWith("System.IO.Compression"))
-                            {
-                                continue;
-                            }
-                            var srcPath = System.IO.Path.Combine(_appDirPath, filename);
-                            var dstPath = System.IO.Path.Combine(_appDirPath, filename + ".old");
-                            try
-                            {
-                                if (System.IO.File.Exists(srcPath))
-                                {
-                                    System.IO.File.Delete(dstPath);//If the file to be deleted does not exist, no exception is thrown.
-                                    System.IO.File.Move(srcPath, dstPath);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.AddLog(ex, $"src={srcPath}, dst={dstPath}");
-                            }
-                        }
-                    }
-                    catch (System.IO.FileNotFoundException ex)
-                    {
-                        _logger.AddLog(ex);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.AddLog(ex);
-                    }
-                    try
-                    {
-                        ExtractZipFile(_zipFilePath, _appDirPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.AddLog(ex);
-                    }
-
-                    try
-                    {
-                        var exeFile = Process.GetCurrentProcess().MainModule!.FileName!;
-                        var pid = Process.GetCurrentProcess().Id;
-                        System.Diagnostics.Process.Start(exeFile, "/updated " + pid);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.AddLog(ex);
-                        return;
-                    }
-                    try
-                    {
-                        Process.GetCurrentProcess().Kill();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.AddLog(ex);
-                    }
-                }
+                await OnRequestUpdate(updateToLatest.Url, _zipFilePath);
                 break;
             case SetException exception:
                 {
@@ -400,42 +332,32 @@ class McvCoreActor : ReceiveActor
                 break;
         }
     }
-    private async Task DownloadFileAsync(string url, string destPath)
+    private async Task OnRequestUpdate(string url, string zipFilePath)
     {
-        //var client = new HttpClient();
-        var client = new HttpClientDownloadWithProgress(url, destPath);
-        client.ProgressChanged += HttpClient_ProgressChanged;
-        await client.StartDownload();
-        //var res = await client.GetAsync(url);
-        //using var sr = await res.Content.ReadAsStreamAsync();
-        //using var fs = new FileStream(destPath, FileMode.Create);
-        //await sr.CopyToAsync(fs);
-    }
-    private void HttpClient_ProgressChanged(object? sender, ProgressChangedEventArgs e)
-    {
-        var message = new NotifyDownloadProgress($"{e.ProgressPercentage}, {e.TotalBytesDownloaded} / {e.TotalFileSize}");
-        SetMessageToPluginManager(message);
-    }
-    private static void ExtractZipFile(string zipFilePath, string appDirPath)
-    {
-        using var archive = ZipFile.OpenRead(zipFilePath);
-        foreach (var entry in archive.Entries)
         {
-            var entryPath = Path.Combine(appDirPath, entry.FullName);
-            var entryDir = Path.GetDirectoryName(entryPath);
-            if (entryDir is not null && !Directory.Exists(entryDir))
-            {
-                Directory.CreateDirectory(entryDir);
-            }
+            await _updater.Update(url, zipFilePath, _appDirPath);
 
-            var entryFn = Path.GetFileName(entryPath);
-            if (!string.IsNullOrEmpty(entryFn))
+            try
             {
-                entry.ExtractToFile(entryPath, true);
+                var exeFile = Process.GetCurrentProcess().MainModule!.FileName!;
+                var pid = Process.GetCurrentProcess().Id;
+                System.Diagnostics.Process.Start(exeFile, "/updated " + pid);
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+                return;
+            }
+            try
+            {
+                Process.GetCurrentProcess().Kill();
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
             }
         }
     }
-
     private readonly string _zipFilePath = "latest.zip";
     private readonly string _appDirPath = "";
     internal async Task SetMessageAsync(INotifyMessageV2 message)
