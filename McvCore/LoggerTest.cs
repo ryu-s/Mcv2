@@ -7,6 +7,7 @@ using System.Net;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Linq;
+using Mcv.PluginV2;
 
 namespace Mcv.Core;
 enum LogType
@@ -14,22 +15,17 @@ enum LogType
     Error,
     Debug,
 }
-class Log
+class Log(string message, LogType type, Data? data = null)
 {
-    public string Message { get; }
-    public LogType Type { get; }
+    public string Message { get; } = message;
+    public LogType Type { get; } = type;
     public DateTime LogDateTime { get; } = DateTime.Now;
-    public Data? Data { get; }
-    public Log(string message, LogType type, Data? data = null)
-    {
-        Message = message;
-        Type = type;
-        Data = data;
-    }
+    public Data? Data { get; } = data;
+
     public string ToJson()
     {
         var data = Data is not null ? Data.ToJson() : "null";
-        return $"{{\"message\":\"{Message}\",\"logtype\":\"{Type}\",\"datetime\":\"{LogDateTime:yyyy/MM/dd HH:mm:ss}\",\"data\":{data}}}";
+        return $"{{\"message\":\"{Helper.EscapeForJson(Message)}\",\"logtype\":\"{Type}\",\"datetime\":\"{LogDateTime:yyyy/MM/dd HH:mm:ss}\",\"data\":{data}}}";
     }
     public static Log? FromJson(string json)
     {

@@ -132,7 +132,6 @@ class McvCoreActor : ReceiveActor
         System.Environment.SetEnvironmentVariable("SQLite_NoConfigure", "1");
 
         _self = Self;
-        _appDirPath = AppContext.BaseDirectory;
         _logger = logger;
         _updater = new Updater(logger);
         _updater.ProgressChanged += (s, e) =>
@@ -177,11 +176,11 @@ class McvCoreActor : ReceiveActor
         _splashThread.Start();
 
 
-        Receive<Initialize>(_ =>
+        ReceiveAsync<Initialize>(async _ =>
         {
             try
             {
-                Initialize();
+                await InitializeAsync();
             }
             catch (Exception ex)
             {
@@ -335,7 +334,7 @@ class McvCoreActor : ReceiveActor
     private async Task OnRequestUpdate(string url, string zipFilePath)
     {
         {
-            await _updater.Update(url, zipFilePath, _appDirPath);
+            await _updater.Update(url, zipFilePath, GetAppDirPath());
 
             try
             {
@@ -359,7 +358,6 @@ class McvCoreActor : ReceiveActor
         }
     }
     private readonly string _zipFilePath = "latest.zip";
-    private readonly string _appDirPath = "";
     internal async Task SetMessageAsync(INotifyMessageV2 message)
     {
         Debug.WriteLine($"McvCoreActor::SetMessageAsync(INotifyMessageV2): {message}");
@@ -518,6 +516,10 @@ class McvCoreActor : ReceiveActor
     {
         SetMessageToPluginManager(new NotifyConnectionAdded(e.ConnSt));
     }
+    private static string GetAppDirPath()
+    {
+        return AppContext.BaseDirectory;
+    }
     /// <summary>
     /// 
     /// </summary>
@@ -541,7 +543,7 @@ class McvCoreActor : ReceiveActor
     {
         return Path.Combine(_coreOptions.SettingsDirPath, filename);
     }
-    internal bool Initialize()
+    internal async Task<bool> InitializeAsync()
     {
         _splashVm.AddLog("初期化開始");
         try
@@ -552,6 +554,7 @@ class McvCoreActor : ReceiveActor
         catch (Exception)
         {
             MessageBox.Show("ファイルの読み書き権限無し", "マルチコメビュ起動エラー");
+            _logger.AddLog("ファイルの読み書き権限無し", LogType.Debug, new Data($"dir:{GetAppDirPath()}"));
             return false;
         }
         if (File.Exists(OptionsPath) && !File.Exists(MainViewPluginOptionsPath))
@@ -567,6 +570,9 @@ class McvCoreActor : ReceiveActor
         {
             File.Move(Path.Combine(OptionsPath, "users_Twitch.db"), Path.Combine(OptionsPath, "TwitchSitePlugin_users.db"));
         }
+
+        //error.txtがあったらサーバに送信して削除する
+        await SendErrorLogFile(GetAppName(), GetAppVersion());
 
         _splashVm.AddLog("設定の読み込み");
         _coreOptions = LoadOptions(OptionsPath, _logger);
@@ -689,7 +695,7 @@ class McvCoreActor : ReceiveActor
     }
     private string GetSitePluginOptionsPath()
     {
-        return Path.Combine(_appDirPath, "settings", "options.txt");
+        return Path.Combine(GetAppDirPath(), "settings", "options.txt");
     }
 
     internal void ChangeConnectionStatus(IConnectionStatusDiff connStDiff)

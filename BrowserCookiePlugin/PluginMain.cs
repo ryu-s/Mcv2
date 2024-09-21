@@ -15,7 +15,7 @@ public class PluginMain : IPlugin
     public string Name { get; } = "BrowserCookiePlugin";
     public List<string> Roles { get; } = new List<string> { "cookie:chrome", "cookie:firefox", "cookie:edge" };
 
-    private void LoadBrowsers()
+    private async Task LoadBrowsersAsync()
     {
         var list = new List<IBrowserProfile>();
         var managers = new List<IBrowserManager>
@@ -35,7 +35,7 @@ public class PluginMain : IPlugin
             }
             catch (Exception ex)
             {
-                //_logger.LogException(ex);
+                await SetExceptionAsync(ex);
             }
         }
         foreach (var profile in list)
@@ -68,6 +68,7 @@ public class PluginMain : IPlugin
                     catch (Exception ex)
                     {
                         Debug.WriteLine(ex.Message);
+                        await SetExceptionAsync(ex);
                     }
                     return new ReplyCookies(cookies);
 
@@ -82,7 +83,7 @@ public class PluginMain : IPlugin
         {
             case SetLoading _:
                 {
-                    LoadBrowsers();
+                    await LoadBrowsersAsync();
                     await Host.SetMessageAsync(new SetPluginHello(Id, Name, Roles));
                 }
                 break;
@@ -99,6 +100,11 @@ public class PluginMain : IPlugin
 
     public async Task SetMessageAsync(INotifyMessageV2 message)
     {
+        await Task.CompletedTask;
+    }
+    private async Task SetExceptionAsync(Exception exception)
+    {
+        await Host.SetMessageAsync(new SetException(exception, "", ""));
     }
 }
 
