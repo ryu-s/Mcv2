@@ -10,14 +10,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
 namespace Mcv.MainViewPlugin
 {
@@ -29,11 +26,6 @@ namespace Mcv.MainViewPlugin
     {
         bool IsValidMessage(ISiteMessage message);
         IMcvCommentViewModel? CreateViewModel(ISiteMessage message, ConnectionName connName, IMainViewPluginOptions options, MyUser? user);
-    }
-    interface IConnectionNameHost : INotifyPropertyChanged
-    {
-        Task<string> GetConnectionName(ConnectionId connId);
-        void SetConnectionName(ConnectionId connId, string newConnectionName);
     }
     class ConnectionName : ViewModelBase, INotifyPropertyChanged
     {
@@ -152,7 +144,7 @@ namespace Mcv.MainViewPlugin
     }
     class SuggestToUpdateViewModel : ViewModelBase, INotifyPropertyChanged
     {
-        private readonly IAdapter _adapter;
+        private readonly IMainViewHostAdapter _adapter;
         private string _log;
 
         public SuggestToUpdateViewModel()
@@ -169,7 +161,7 @@ namespace Mcv.MainViewPlugin
             _adapter = default!;
             _log = "LOG";
         }
-        public SuggestToUpdateViewModel(string url, string current, string latest, IAdapter adapter)
+        public SuggestToUpdateViewModel(string url, string current, string latest, IMainViewHostAdapter adapter)
         {
             Url = url;
             CurrentVersion = current;
@@ -218,13 +210,13 @@ namespace Mcv.MainViewPlugin
     }
     class DownloadViewModel : ViewModelBase, INotifyPropertyChanged
     {
-        private readonly IAdapter _adapter;
+        private readonly IMainViewHostAdapter _adapter;
         private string _log;
         public DownloadViewModel()
         {
             _log = "TEST";
         }
-        public DownloadViewModel(IAdapter adapter)
+        public DownloadViewModel(IMainViewHostAdapter adapter)
         {
             Log = "";
             _adapter = adapter;
@@ -629,7 +621,7 @@ namespace Mcv.MainViewPlugin
         {
             _adapter.RequestAddConnection();
         }
-        private void AddConnection(IAdapter adapter, IConnectionStatus connSt, SiteViewModel selectedSite, BrowserViewModel selectedBrowser)
+        private void AddConnection(IMainViewHostAdapter adapter, IConnectionStatus connSt, SiteViewModel selectedSite, BrowserViewModel selectedBrowser)
         {
             var name = new ConnectionName(adapter, connSt.Id) { BackColor = Colors.White, ForeColor = Colors.Black };
             //name.SetName(connSt.Name);
@@ -796,7 +788,7 @@ namespace Mcv.MainViewPlugin
 
 
         private readonly Color _myColor = new Color { A = 0xFF, R = 45, G = 45, B = 48 };
-        private readonly IAdapter _adapter;
+        private readonly IMainViewHostAdapter _adapter;
         #endregion //Properties
         public MainViewModel()
         {
@@ -812,11 +804,11 @@ namespace Mcv.MainViewPlugin
         public CommentDataGridViewModel CommentVm { get; }
         public ConnectionsViewModel ConnectionsVm { get; }
         private readonly Dispatcher _dispatcher;
-        public MainViewModel(IAdapter adapter)
+        public MainViewModel(IMainViewHostAdapter adapter)
         {
             var collectionView = CollectionViewSource.GetDefaultView(_comments);
             CommentVm = new CommentDataGridViewModel(adapter.Options, collectionView);
-            ConnectionsVm = new ConnectionsViewModel(adapter);
+            ConnectionsVm = new ConnectionsViewModel(adapter.Options);
             //_io = io;
             //_logger = logger;
             //_sitePluginLoader = sitePluginLoader;
@@ -1106,7 +1098,7 @@ namespace Mcv.MainViewPlugin
             return _userVmDict[userId];
         }
         private readonly Dictionary<string, UserViewModel> _userVmDict = new();
-        public static void ShowUserInfo(string userId, ObservableCollection<IMcvCommentViewModel> comments, IMainViewPluginOptions options, IAdapter adapter, IUserViewModelProvider userProvider)
+        public static void ShowUserInfo(string userId, ObservableCollection<IMcvCommentViewModel> comments, IMainViewPluginOptions options, IMainViewHostAdapter adapter, IUserViewModelProvider userProvider)
         {
             var user = adapter.GetUser(userId);
             var userVm = userProvider.GetUserVm(userId);

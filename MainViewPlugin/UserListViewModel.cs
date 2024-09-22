@@ -12,7 +12,7 @@ namespace MultiCommentViewer.ViewModels
         public ICommand ShowUserInfoCommand { get; }
         private readonly ObservableCollection<IMcvCommentViewModel> _comments;
         private readonly IMainViewPluginOptions _options;
-        private readonly IAdapter _adapter;
+        private readonly IMainViewHostAdapter _adapter;
         private readonly IUserViewModelProvider _userProvider;
 
         public ObservableCollection<UserViewModel> Users { get; }
@@ -29,7 +29,7 @@ namespace MultiCommentViewer.ViewModels
                 throw new NotSupportedException();
             }
         }
-        public UserListViewModel(ObservableCollection<UserViewModel> uvms, ObservableCollection<IMcvCommentViewModel> comments, IMainViewPluginOptions options, IAdapter adapter, IUserViewModelProvider userProvider)
+        public UserListViewModel(ObservableCollection<UserViewModel> uvms, ObservableCollection<IMcvCommentViewModel> comments, IMainViewPluginOptions options, IMainViewHostAdapter adapter, IUserViewModelProvider userProvider)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             //TODO:本来はModelを受けとりたいところだけど、現状ではMainViewModelがModelの責務も持ってしまっている

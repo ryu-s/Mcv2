@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Mcv.MainViewPlugin;
-
 [Export(typeof(IPlugin))]
 public class MainViewPlugin : IPlugin
 {
@@ -15,7 +14,7 @@ public class MainViewPlugin : IPlugin
     public string Name => "MainViewPlugin";
     public List<string> Roles { get; } = new List<string> { "mainview" };
     public IPluginHost Host { get; set; } = default!;
-    private IAdapter _adapter = default!;
+    private IPluginMainHost _adapter = default!;
     private MainViewModel _vm = default!;
     private readonly DynamicOptionsTest _options;
     private MainWindow _v = default!;
@@ -119,8 +118,9 @@ public class MainViewPlugin : IPlugin
             case SetLoading _:
                 {
                     _options.Set(await LoadOptions());
-                    _adapter = new IAdapter(Host, _options);
-                    _vm = new MainViewModel(_adapter);//_adapterのイベントを購読する処理がctorにある。SiteAddedがOnLoaded()の前に来るからこのタイミングで初期化しないと間に合わない。            
+                    var adapter = new Adapter(Host, _options);
+                    _adapter = adapter;
+                    _vm = new MainViewModel(adapter);//_adapterのイベントを購読する処理がctorにある。SiteAddedがOnLoaded()の前に来るからこのタイミングで初期化しないと間に合わない。            
                     _adapter.AddEmptyBrowserProfile();
                     await Host.SetMessageAsync(new SetPluginHello(Id, Name, Roles));
                 }

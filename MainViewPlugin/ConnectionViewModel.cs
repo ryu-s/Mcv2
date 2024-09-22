@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Mcv.MainViewPlugin;
-
 class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
 {
     private string _input = "";
@@ -15,7 +14,7 @@ class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
     private BrowserViewModel _selectedBrowser;
     private bool _canConnect;
     private bool _canDisconnect;
-    public ConnectionViewModel(IAdapter adapter, IConnectionStatus connSt, ObservableCollection<SiteViewModel> sites, ObservableCollection<BrowserViewModel> browsers, SiteViewModel selectedSite, BrowserViewModel selectedBrowser, ConnectionName connName)
+    public ConnectionViewModel(IConnectionViewModelHost adapter, IConnectionStatus connSt, ObservableCollection<SiteViewModel> sites, ObservableCollection<BrowserViewModel> browsers, SiteViewModel selectedSite, BrowserViewModel selectedBrowser, ConnectionName connName)
     {
         Id = connSt.Id;
         _adapter = adapter;
@@ -34,7 +33,7 @@ class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
     }
 
     public ConnectionId Id { get; }
-    private readonly IAdapter _adapter;
+    private readonly IConnectionViewModelHost _adapter;
 
     //public string Name
     //{
@@ -184,7 +183,7 @@ class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-
+            _adapter.SetException(ex);
         }
     }
     private async void Disconnect()
@@ -196,7 +195,7 @@ class ConnectionViewModel : ViewModelBase, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-
+            _adapter.SetException(ex);
         }
     }
 }

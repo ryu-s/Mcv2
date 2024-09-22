@@ -1,16 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace Mcv.MainViewPlugin;
-
 /// <summary>
 /// 
 /// </summary>
@@ -215,6 +214,7 @@ class CommentDataGridViewModel : ViewModelBase, INotifyPropertyChanged
 
     //}
     public CommentDataGridViewModel()
+        : this(new DesignTimeMainViewPluginOptions(), new CollectionView(new List<IMcvCommentViewModel>()))
     {
         if (!DesignModeUtils.IsDesignMode)
         {

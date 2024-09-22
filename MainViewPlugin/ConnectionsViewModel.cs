@@ -22,191 +22,191 @@ class ConnectionsViewModel : ViewModelBase, INotifyPropertyChanged
     {
         return Connections.Where(c => c.IsSelected).Select(c => c.Id).ToList();
     }
-    private readonly IAdapter _adapter;
+    private readonly IMainViewPluginOptions _options;
     #region ConnectionsView
     #region ConnectionsViewSelection
     public int ConnectionsViewSelectionDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewSelectionDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewSelectionDisplayIndex = value; }
+        get { return _options.ConnectionsViewSelectionDisplayIndex; }
+        set { _options.ConnectionsViewSelectionDisplayIndex = value; }
     }
     public double ConnectionsViewSelectionWidth
     {
-        get { return _adapter.Options.ConnectionsViewSelectionWidth; }
-        set { _adapter.Options.ConnectionsViewSelectionWidth = value; }
+        get { return _options.ConnectionsViewSelectionWidth; }
+        set { _options.ConnectionsViewSelectionWidth = value; }
     }
     public bool IsShowConnectionsViewSelection
     {
-        get { return _adapter.Options.IsShowConnectionsViewSelection; }
-        set { _adapter.Options.IsShowConnectionsViewSelection = value; }
+        get { return _options.IsShowConnectionsViewSelection; }
+        set { _options.IsShowConnectionsViewSelection = value; }
     }
     #endregion
     #region ConnectionsViewSite
     public int ConnectionsViewSiteDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewSiteDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewSiteDisplayIndex = value; }
+        get { return _options.ConnectionsViewSiteDisplayIndex; }
+        set { _options.ConnectionsViewSiteDisplayIndex = value; }
     }
     public double ConnectionsViewSiteWidth
     {
-        get { return _adapter.Options.ConnectionsViewSiteWidth; }
-        set { _adapter.Options.ConnectionsViewSiteWidth = value; }
+        get { return _options.ConnectionsViewSiteWidth; }
+        set { _options.ConnectionsViewSiteWidth = value; }
     }
     public bool IsShowConnectionsViewSite
     {
-        get { return _adapter.Options.IsShowConnectionsViewSite; }
-        set { _adapter.Options.IsShowConnectionsViewSite = value; }
+        get { return _options.IsShowConnectionsViewSite; }
+        set { _options.IsShowConnectionsViewSite = value; }
     }
     #endregion
     #region ConnectionsViewConnectionName
     public int ConnectionsViewConnectionNameDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewConnectionNameDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewConnectionNameDisplayIndex = value; }
+        get { return _options.ConnectionsViewConnectionNameDisplayIndex; }
+        set { _options.ConnectionsViewConnectionNameDisplayIndex = value; }
     }
     public double ConnectionsViewConnectionNameWidth
     {
-        get { return _adapter.Options.ConnectionsViewConnectionNameWidth; }
-        set { _adapter.Options.ConnectionsViewConnectionNameWidth = value; }
+        get { return _options.ConnectionsViewConnectionNameWidth; }
+        set { _options.ConnectionsViewConnectionNameWidth = value; }
     }
     public bool IsShowConnectionsViewConnectionName
     {
-        get { return _adapter.Options.IsShowConnectionsViewConnectionName; }
-        set { _adapter.Options.IsShowConnectionsViewConnectionName = value; }
+        get { return _options.IsShowConnectionsViewConnectionName; }
+        set { _options.IsShowConnectionsViewConnectionName = value; }
     }
     #endregion
     #region ConnectionsViewInput
     public int ConnectionsViewInputDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewInputDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewInputDisplayIndex = value; }
+        get { return _options.ConnectionsViewInputDisplayIndex; }
+        set { _options.ConnectionsViewInputDisplayIndex = value; }
     }
     public double ConnectionsViewInputWidth
     {
-        get { return _adapter.Options.ConnectionsViewInputWidth; }
-        set { _adapter.Options.ConnectionsViewInputWidth = value; }
+        get { return _options.ConnectionsViewInputWidth; }
+        set { _options.ConnectionsViewInputWidth = value; }
     }
     public bool IsShowConnectionsViewInput
     {
-        get { return _adapter.Options.IsShowConnectionsViewInput; }
-        set { _adapter.Options.IsShowConnectionsViewInput = value; }
+        get { return _options.IsShowConnectionsViewInput; }
+        set { _options.IsShowConnectionsViewInput = value; }
     }
     #endregion
     #region ConnectionsViewBrowser
     public int ConnectionsViewBrowserDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewBrowserDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewBrowserDisplayIndex = value; }
+        get { return _options.ConnectionsViewBrowserDisplayIndex; }
+        set { _options.ConnectionsViewBrowserDisplayIndex = value; }
     }
     public double ConnectionsViewBrowserWidth
     {
-        get { return _adapter.Options.ConnectionsViewBrowserWidth; }
-        set { _adapter.Options.ConnectionsViewBrowserWidth = value; }
+        get { return _options.ConnectionsViewBrowserWidth; }
+        set { _options.ConnectionsViewBrowserWidth = value; }
     }
     public bool IsShowConnectionsViewBrowser
     {
-        get { return _adapter.Options.IsShowConnectionsViewBrowser; }
-        set { _adapter.Options.IsShowConnectionsViewBrowser = value; }
+        get { return _options.IsShowConnectionsViewBrowser; }
+        set { _options.IsShowConnectionsViewBrowser = value; }
     }
     #endregion
     #region ConnectionsViewConnection
     public int ConnectionsViewConnectionDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewConnectionDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewConnectionDisplayIndex = value; }
+        get { return _options.ConnectionsViewConnectionDisplayIndex; }
+        set { _options.ConnectionsViewConnectionDisplayIndex = value; }
     }
     public double ConnectionsViewConnectionWidth
     {
-        get { return _adapter.Options.ConnectionsViewConnectionWidth; }
-        set { _adapter.Options.ConnectionsViewConnectionWidth = value; }
+        get { return _options.ConnectionsViewConnectionWidth; }
+        set { _options.ConnectionsViewConnectionWidth = value; }
     }
     public bool IsShowConnectionsViewConnection
     {
-        get { return _adapter.Options.IsShowConnectionsViewConnection; }
-        set { _adapter.Options.IsShowConnectionsViewConnection = value; }
+        get { return _options.IsShowConnectionsViewConnection; }
+        set { _options.IsShowConnectionsViewConnection = value; }
     }
     #endregion
     #region ConnectionsViewDisconnection
     public int ConnectionsViewDisconnectionDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewDisconnectionDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewDisconnectionDisplayIndex = value; }
+        get { return _options.ConnectionsViewDisconnectionDisplayIndex; }
+        set { _options.ConnectionsViewDisconnectionDisplayIndex = value; }
     }
     public double ConnectionsViewDisconnectionWidth
     {
-        get { return _adapter.Options.ConnectionsViewDisconnectionWidth; }
-        set { _adapter.Options.ConnectionsViewDisconnectionWidth = value; }
+        get { return _options.ConnectionsViewDisconnectionWidth; }
+        set { _options.ConnectionsViewDisconnectionWidth = value; }
     }
     public bool IsShowConnectionsViewDisconnection
     {
-        get { return _adapter.Options.IsShowConnectionsViewDisconnection; }
-        set { _adapter.Options.IsShowConnectionsViewDisconnection = value; }
+        get { return _options.IsShowConnectionsViewDisconnection; }
+        set { _options.IsShowConnectionsViewDisconnection = value; }
     }
     #endregion
     #region ConnectionsViewSave
     public int ConnectionsViewSaveDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewSaveDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewSaveDisplayIndex = value; }
+        get { return _options.ConnectionsViewSaveDisplayIndex; }
+        set { _options.ConnectionsViewSaveDisplayIndex = value; }
     }
     public double ConnectionsViewSaveWidth
     {
-        get { return _adapter.Options.ConnectionsViewSaveWidth; }
-        set { _adapter.Options.ConnectionsViewSaveWidth = value; }
+        get { return _options.ConnectionsViewSaveWidth; }
+        set { _options.ConnectionsViewSaveWidth = value; }
     }
     public bool IsShowConnectionsViewSave
     {
-        get { return _adapter.Options.IsShowConnectionsViewSave; }
-        set { _adapter.Options.IsShowConnectionsViewSave = value; }
+        get { return _options.IsShowConnectionsViewSave; }
+        set { _options.IsShowConnectionsViewSave = value; }
     }
     #endregion
     #region ConnectionsViewLoggedinUsername
     public int ConnectionsViewLoggedinUsernameDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewLoggedinUsernameDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewLoggedinUsernameDisplayIndex = value; }
+        get { return _options.ConnectionsViewLoggedinUsernameDisplayIndex; }
+        set { _options.ConnectionsViewLoggedinUsernameDisplayIndex = value; }
     }
     public double ConnectionsViewLoggedinUsernameWidth
     {
-        get { return _adapter.Options.ConnectionsViewLoggedinUsernameWidth; }
-        set { _adapter.Options.ConnectionsViewLoggedinUsernameWidth = value; }
+        get { return _options.ConnectionsViewLoggedinUsernameWidth; }
+        set { _options.ConnectionsViewLoggedinUsernameWidth = value; }
     }
     public bool IsShowConnectionsViewLoggedinUsername
     {
-        get { return _adapter.Options.IsShowConnectionsViewLoggedinUsername; }
-        set { _adapter.Options.IsShowConnectionsViewLoggedinUsername = value; }
+        get { return _options.IsShowConnectionsViewLoggedinUsername; }
+        set { _options.IsShowConnectionsViewLoggedinUsername = value; }
     }
     #endregion
     #region ConnectionsViewConnectionBackground
     public int ConnectionsViewConnectionBackgroundDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewConnectionBackgroundDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewConnectionBackgroundDisplayIndex = value; }
+        get { return _options.ConnectionsViewConnectionBackgroundDisplayIndex; }
+        set { _options.ConnectionsViewConnectionBackgroundDisplayIndex = value; }
     }
     public double ConnectionsViewConnectionBackgroundWidth
     {
-        get { return _adapter.Options.ConnectionsViewConnectionBackgroundWidth; }
-        set { _adapter.Options.ConnectionsViewConnectionBackgroundWidth = value; }
+        get { return _options.ConnectionsViewConnectionBackgroundWidth; }
+        set { _options.ConnectionsViewConnectionBackgroundWidth = value; }
     }
     public bool IsShowConnectionsViewConnectionBackground
     {
-        get { return _adapter.Options.IsEnabledSiteConnectionColor && _adapter.Options.SiteConnectionColorType == SiteConnectionColorType.Connection; }
+        get { return _options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Connection; }
     }
     #endregion
     #region ConnectionsViewConnectionForeground
     public int ConnectionsViewConnectionForegroundDisplayIndex
     {
-        get { return _adapter.Options.ConnectionsViewConnectionForegroundDisplayIndex; }
-        set { _adapter.Options.ConnectionsViewConnectionForegroundDisplayIndex = value; }
+        get { return _options.ConnectionsViewConnectionForegroundDisplayIndex; }
+        set { _options.ConnectionsViewConnectionForegroundDisplayIndex = value; }
     }
     public double ConnectionsViewConnectionForegroundWidth
     {
-        get { return _adapter.Options.ConnectionsViewConnectionForegroundWidth; }
-        set { _adapter.Options.ConnectionsViewConnectionForegroundWidth = value; }
+        get { return _options.ConnectionsViewConnectionForegroundWidth; }
+        set { _options.ConnectionsViewConnectionForegroundWidth = value; }
     }
     public bool IsShowConnectionsViewConnectionForeground
     {
-        get { return _adapter.Options.IsEnabledSiteConnectionColor && _adapter.Options.SiteConnectionColorType == SiteConnectionColorType.Connection; }
+        get { return _options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Connection; }
     }
     #endregion
     #endregion
@@ -215,7 +215,7 @@ class ConnectionsViewModel : ViewModelBase, INotifyPropertyChanged
     {
         get
         {
-            if (_adapter.Options.IsEnabledSiteConnectionColor && _adapter.Options.SiteConnectionColorType == SiteConnectionColorType.Connection)
+            if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Connection)
             {
                 return 100;
             }
@@ -229,25 +229,25 @@ class ConnectionsViewModel : ViewModelBase, INotifyPropertyChanged
     {
         get
         {
-            if (_adapter.Options.IsShowHorizontalGridLine && _adapter.Options.IsShowVerticalGridLine)
+            if (_options.IsShowHorizontalGridLine && _options.IsShowVerticalGridLine)
                 return System.Windows.Controls.DataGridGridLinesVisibility.All;
-            else if (_adapter.Options.IsShowHorizontalGridLine)
+            else if (_options.IsShowHorizontalGridLine)
                 return System.Windows.Controls.DataGridGridLinesVisibility.Horizontal;
-            else if (_adapter.Options.IsShowVerticalGridLine)
+            else if (_options.IsShowVerticalGridLine)
                 return System.Windows.Controls.DataGridGridLinesVisibility.Vertical;
             else
                 return System.Windows.Controls.DataGridGridLinesVisibility.None;
         }
     }
-    public ConnectionsViewModel(IAdapter adapter)
+    public ConnectionsViewModel(IMainViewPluginOptions options)
     {
-        _adapter = adapter;
-        adapter.Options.PropertyChanged += (s, e) =>
+        _options = options;
+        options.PropertyChanged += (s, e) =>
         {
             switch (e.PropertyName)
             {
-                case nameof(adapter.Options.IsEnabledSiteConnectionColor):
-                case nameof(adapter.Options.SiteConnectionColorType):
+                case nameof(_options.IsEnabledSiteConnectionColor):
+                case nameof(_options.SiteConnectionColorType):
                     RaisePropertyChanged(nameof(IsShowConnectionsViewConnectionBackground));
                     RaisePropertyChanged(nameof(IsShowConnectionsViewConnectionForeground));
                     RaisePropertyChanged(nameof(ConnectionColorColumnWidth));

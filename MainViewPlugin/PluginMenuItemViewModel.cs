@@ -9,13 +9,13 @@ namespace Mcv.MainViewPlugin;
 
 class PluginMenuItemViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    private readonly IAdapter _adapter;
+    private readonly IPluginMenuItemViewModelHost _host;
 
-    public PluginMenuItemViewModel(string displayName, PluginId pluginId, IAdapter adapter)
+    public PluginMenuItemViewModel(string displayName, PluginId pluginId, IPluginMenuItemViewModelHost host)
     {
         DisplayName = displayName;
         PluginId = pluginId;
-        _adapter = adapter;
+        _host = host;
         ShowSettingViewCommand = new RelayCommand(ShowSettingView);
     }
 
@@ -28,6 +28,6 @@ class PluginMenuItemViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ShowSettingView()
     {
-        _adapter.RequestShowSettingsPanel(PluginId);
+        _host.RequestShowSettingsPanel(PluginId);
     }
 }
