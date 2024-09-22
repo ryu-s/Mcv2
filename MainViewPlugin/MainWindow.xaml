@@ -386,6 +386,10 @@
                     <Style TargetType="{x:Type DataGridColumnHeader}">
                         <Setter Property="ContextMenu" Value="{StaticResource MetadataDataGridContextMenu}" />
                     </Style>
+                    <Style TargetType="{x:Type DataGridRow}">
+                        <Setter Property="Background" Value="{Binding Background, UpdateSourceTrigger=PropertyChanged}" />
+                        <Setter Property="Foreground" Value="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" />
+                    </Style>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn

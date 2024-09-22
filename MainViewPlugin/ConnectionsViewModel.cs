@@ -1,11 +1,12 @@
 ﻿using Mcv.PluginV2;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 
 namespace Mcv.MainViewPlugin;
 
-class ConnectionsViewModel
+class ConnectionsViewModel : ViewModelBase, INotifyPropertyChanged
 {
     public ObservableCollection<ConnectionViewModel> Connections { get; } = new ObservableCollection<ConnectionViewModel>();
 
@@ -241,5 +242,17 @@ class ConnectionsViewModel
     public ConnectionsViewModel(IAdapter adapter)
     {
         _adapter = adapter;
+        adapter.Options.PropertyChanged += (s, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(adapter.Options.IsEnabledSiteConnectionColor):
+                case nameof(adapter.Options.SiteConnectionColorType):
+                    RaisePropertyChanged(nameof(IsShowConnectionsViewConnectionBackground));
+                    RaisePropertyChanged(nameof(IsShowConnectionsViewConnectionForeground));
+                    RaisePropertyChanged(nameof(ConnectionColorColumnWidth));
+                    break;
+            }
+        };
     }
 }

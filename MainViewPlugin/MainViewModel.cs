@@ -52,6 +52,9 @@ namespace Mcv.MainViewPlugin
             }
         }
         string _name = "";
+        private Color _backColor;
+        private Color _foreColor;
+
         private async void GetName()
         {
             var name = await _host.GetConnectionName(_connId);
@@ -62,8 +65,24 @@ namespace Mcv.MainViewPlugin
             }
         }
 
-        public Color BackColor { get; internal set; }
-        public Color ForeColor { get; internal set; }
+        public Color BackColor
+        {
+            get { return _backColor; }
+            set
+            {
+                _backColor = value;
+                RaisePropertyChanged();
+            }
+        }
+        public Color ForeColor
+        {
+            get { return _foreColor; }
+            set
+            {
+                _foreColor = value;
+                RaisePropertyChanged();
+            }
+        }
 
         public void OnNameChanged()
         {
@@ -620,7 +639,7 @@ namespace Mcv.MainViewPlugin
             _connNameDict.Add(connSt.Id, name);
             ConnectionsVm.AddConnection(vm);
 
-            var metaVm = new MetadataViewModel(name);
+            var metaVm = new MetadataViewModel(name, adapter.Options);
             _metaDict.Add(connSt.Id, metaVm);
             MetaCollection.Add(metaVm);
         }

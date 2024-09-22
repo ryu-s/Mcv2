@@ -228,6 +228,8 @@ namespace Mcv.MainViewPlugin
         public Color PeriscopeForeColor { get => GetValue(); set => SetValue(value); }
         public Color ShowRoomBackColor { get => GetValue(); set => SetValue(value); }
         public Color ShowRoomForeColor { get => GetValue(); set => SetValue(value); }
+        public Color BigoBackColor { get => GetValue(); set => SetValue(value); }
+        public Color BigoForeColor { get => GetValue(); set => SetValue(value); }
         public double UserInfoViewHeight { get => GetValue(); set => SetValue(value); }
         public double UserInfoViewWidth { get => GetValue(); set => SetValue(value); }
         public double UserInfoViewLeft { get => GetValue(); set => SetValue(value); }
@@ -451,6 +453,8 @@ namespace Mcv.MainViewPlugin
             Dict.Add(nameof(PeriscopeForeColor), new Item { DefaultValue = ColorFromArgb("#FF008080"), Predicate = c => true, Serializer = c => ColorToArgb(c), Deserializer = s => ColorFromArgb(s) });
             Dict.Add(nameof(ShowRoomBackColor), new Item { DefaultValue = ColorFromArgb("#FFFA8072"), Predicate = c => true, Serializer = c => ColorToArgb(c), Deserializer = s => ColorFromArgb(s) });
             Dict.Add(nameof(ShowRoomForeColor), new Item { DefaultValue = ColorFromArgb("#FF008080"), Predicate = c => true, Serializer = c => ColorToArgb(c), Deserializer = s => ColorFromArgb(s) });
+            Dict.Add(nameof(BigoBackColor), new Item { DefaultValue = ColorFromArgb("#FFFA8072"), Predicate = c => true, Serializer = c => ColorToArgb(c), Deserializer = s => ColorFromArgb(s) });
+            Dict.Add(nameof(BigoForeColor), new Item { DefaultValue = ColorFromArgb("#FF008080"), Predicate = c => true, Serializer = c => ColorToArgb(c), Deserializer = s => ColorFromArgb(s) });
 
             Dict.Add(nameof(UserInfoViewHeight), new Item { DefaultValue = 550, Predicate = n => n > 0, Serializer = n => n.ToString(), Deserializer = s => double.Parse(s) });
             Dict.Add(nameof(UserInfoViewWidth), new Item { DefaultValue = 750, Predicate = n => n > 0, Serializer = n => n.ToString(), Deserializer = s => double.Parse(s) });

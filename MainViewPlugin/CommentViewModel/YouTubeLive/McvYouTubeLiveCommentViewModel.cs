@@ -2,6 +2,7 @@
 using Mcv.YouTubeLiveSitePlugin;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -106,17 +107,17 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
     {
         get
         {
-            if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Site)
+            if (User?.ForeColorArgb is not null)
+            {
+                return new SolidColorBrush(Utils.ColorFromArgb(User.ForeColorArgb));
+            }
+            else if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Site)
             {
                 return CreateSiteForeground();
             }
             else if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Connection)
             {
                 return new SolidColorBrush(ConnectionName.ForeColor);
-            }
-            else if (User?.ForeColorArgb is not null)
-            {
-                return new SolidColorBrush(Utils.ColorFromArgb(User.ForeColorArgb));
             }
             else
             {
@@ -129,17 +130,17 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
     {
         get
         {
-            if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Site)
+            if (User?.BackColorArgb is not null)
+            {
+                return new SolidColorBrush(Utils.ColorFromArgb(User.BackColorArgb));
+            }
+            else if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Site)
             {
                 return CreateSiteBackground();
             }
             else if (_options.IsEnabledSiteConnectionColor && _options.SiteConnectionColorType == SiteConnectionColorType.Connection)
             {
                 return new SolidColorBrush(ConnectionName.BackColor);
-            }
-            else if (User?.BackColorArgb is not null)
-            {
-                return new SolidColorBrush(Utils.ColorFromArgb(User.BackColorArgb));
             }
             else
             {
@@ -184,14 +185,14 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
 
     public FontWeight FontWeight => _options.FontWeight;
 
-    public string Id { get; protected set; }
+    public string? Id { get; protected set; }
 
-    public string Info { get; protected set; }
+    public string? Info { get; protected set; }
 
     public bool IsVisible => true;
 
     public string PostTime { get; protected set; }
-    public IMessageImage Thumbnail { get; protected set; }
+    public IMessageImage? Thumbnail { get; protected set; }
     public TextWrapping UserNameWrapping
     {
         get
@@ -208,7 +209,7 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
     }
     public bool IsTranslated { get; set; }
 }
-class McvYouTubeLiveCommentViewModel : CommentViewModelBase
+class McvYouTubeLiveCommentViewModel : CommentViewModelBase, INotifyPropertyChanged
 {
     private McvYouTubeLiveCommentViewModel(ConnectionName connectionStatus, IMainViewPluginOptions options, MyUser? user)
         : base(connectionStatus, options, user)
@@ -331,11 +332,11 @@ class McvYouTubeLiveCommentViewModel : CommentViewModelBase
     }
     protected override SolidColorBrush CreateSiteForeground()
     {
-        return new SolidColorBrush(_options.ForeColor);
+        return new SolidColorBrush(_options.YouTubeLiveForeColor);
     }
 
     protected override SolidColorBrush CreateSiteBackground()
     {
-        return new SolidColorBrush(_options.BackColor);
+        return new SolidColorBrush(_options.YouTubeLiveBackColor);
     }
 }
