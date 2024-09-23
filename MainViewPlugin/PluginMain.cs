@@ -58,7 +58,10 @@ public class MainViewPlugin : IPlugin
                     {
                         user = _adapter.GetUser(messageReceived.UserId);
                         user.Name = messageReceived.Username;
-                        user.Nickname = messageReceived.Nickname;
+                        if (messageReceived.Nickname is not null)
+                        {
+                            user.Nickname = messageReceived.Nickname;
+                        }
                         user.IsNgUser = messageReceived.IsNgUser;
                     }
                     _adapter.OnMessageReceived(messageReceived, user);

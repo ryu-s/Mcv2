@@ -89,6 +89,7 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
                         break;
                 }
             };
+            SetNickname(user);
         }
     }
     private void SetNickname(MyUser user)
