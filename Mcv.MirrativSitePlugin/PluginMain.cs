@@ -73,7 +73,7 @@ namespace MirrativSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("977E9DD1-9F03-42FE-B27C-D75A76087831"));
         public string Name { get; } = "MirrativSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:mirrativ" };
+        public List<string> Roles { get; } = new List<string> { "site:mirrativ", "gui" };
         MirrativSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

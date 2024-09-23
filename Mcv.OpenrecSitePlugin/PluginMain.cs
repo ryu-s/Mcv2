@@ -73,7 +73,7 @@ namespace OpenrecSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("ED9FF84C-D063-4E44-84AB-16FE25B2AA06"));
         public string Name { get; } = "OpenrecSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:openrec" };
+        public List<string> Roles { get; } = new List<string> { "site:openrec", "gui" };
         OpenrecSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

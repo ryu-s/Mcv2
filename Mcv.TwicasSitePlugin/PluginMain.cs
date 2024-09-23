@@ -74,7 +74,7 @@ namespace TwicasSitePlugin.V2
         public IPluginHost Host { get; set; }
         public PluginId Id { get; } = new PluginId(new Guid("BB29A094-FD61-4E69-8E0D-B2BC350C10A6"));
         public string Name { get; } = "TwicasSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:twicas" };
+        public List<string> Roles { get; } = new List<string> { "site:twicas", "gui" };
         TwicasSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

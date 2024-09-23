@@ -72,7 +72,7 @@ namespace BigoSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("5A031E10-3527-4459-B42D-DA7E7AC2B7A4"));
         public string Name { get; } = "BigoSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:bigo" };
+        public List<string> Roles { get; } = new List<string> { "site:bigo", "gui" };
         BigoSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

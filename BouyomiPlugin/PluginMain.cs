@@ -11,7 +11,7 @@ public class PluginMain : IPlugin
     public IPluginHost Host { get; set; } = default!;
     public PluginId Id { get; } = new PluginId(new Guid("B03801D1-D380-45BA-8C46-67BB3251BE3B"));
     public string Name { get; } = "棒読みちゃん連携";
-    public List<string> Roles { get; } = [];
+    public List<string> Roles { get; } = ["gui"];
 
     ITalker? _talker;
     private readonly Options _options = new();

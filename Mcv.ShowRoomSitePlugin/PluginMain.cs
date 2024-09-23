@@ -73,7 +73,7 @@ namespace ShowRoomSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("817646BA-80EB-4E49-9ABE-CA05EACF5FA5"));
         public string Name { get; } = "ShowRoomSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:showroom" };
+        public List<string> Roles { get; } = new List<string> { "site:showroom", "gui" };
         ShowRoomSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

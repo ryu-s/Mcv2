@@ -12,7 +12,7 @@ public class MainViewPlugin : IPlugin
 {
     public PluginId Id { get; } = new PluginId(new Guid("A53CCC44-6A14-4533-99CA-184D5584E257"));
     public string Name => "MainViewPlugin";
-    public List<string> Roles { get; } = new List<string> { "mainview" };
+    public List<string> Roles { get; } = ["mainview", "gui"];
     public IPluginHost Host { get; set; } = default!;
     private IPluginMainHost _adapter = default!;
     private MainViewModel _vm = default!;

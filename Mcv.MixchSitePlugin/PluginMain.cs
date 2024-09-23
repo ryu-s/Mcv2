@@ -73,7 +73,7 @@ namespace MixchSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("B20AB8C8-1B83-47BF-ACAC-F28242BEFF71"));
         public string Name { get; } = "MixchSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:mixch" };
+        public List<string> Roles { get; } = new List<string> { "site:mixch", "gui" };
         MixchSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

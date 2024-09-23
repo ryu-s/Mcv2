@@ -13,7 +13,7 @@ public class PluginMain : IPlugin
     public IPluginHost Host { get; set; } = default!;
     public PluginId Id { get; } = new PluginId(new Guid("8907BEBE-68C9-4D0D-99DE-2D51B35BF704"));
     public string Name { get; } = "予約管理プラグイン";
-    public List<string> Roles { get; } = [];
+    public List<string> Roles { get; } = ["gui"];
 
 
     public async Task<IReplyMessageToPluginV2> RequestMessageAsync(IGetMessageToPluginV2 message)

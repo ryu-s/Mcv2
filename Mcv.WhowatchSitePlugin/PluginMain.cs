@@ -73,7 +73,7 @@ namespace WhowatchSitePlugin.V2
         public IPluginHost Host { get; set; } = null!;
         public PluginId Id { get; } = new PluginId(new Guid("908E2D68-7443-46B8-B2A3-19FBDF6D5FC4"));
         public string Name { get; } = "WhowatchSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:whowatch" };
+        public List<string> Roles { get; } = new List<string> { "site:whowatch", "gui" };
         WhowatchSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

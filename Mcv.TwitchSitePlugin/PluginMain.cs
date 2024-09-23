@@ -73,7 +73,7 @@ namespace TwitchSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("444AB441-C045-4698-B452-C3D929275F9E"));
         public string Name { get; } = "TwitchSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:twitch" };
+        public List<string> Roles { get; } = new List<string> { "site:twitch", "gui" };
         TwitchSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

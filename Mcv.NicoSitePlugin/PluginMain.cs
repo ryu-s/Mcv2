@@ -73,7 +73,7 @@ namespace NicoSitePlugin.V2
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("852C766E-B60E-4FA9-92FE-387F310C0124"));
         public string Name { get; } = "NicoSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:nicolive" };
+        public List<string> Roles { get; } = new List<string> { "site:nicolive", "gui" };
         NicoSiteContext _context;
         private async Task<string> GetUserAgent()
         {

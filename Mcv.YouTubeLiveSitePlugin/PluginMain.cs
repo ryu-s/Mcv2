@@ -74,7 +74,7 @@ namespace Mcv.YouTubeLiveSitePlugin
         public IPluginHost Host { get; set; } = default!;
         public PluginId Id { get; } = new PluginId(new Guid("867B6CAA-1112-4E7D-91AC-FE07D484621D"));
         public string Name { get; } = "YouTubeLiveSitePlugin";
-        public List<string> Roles { get; } = new List<string> { "site:youtubelive" };
+        public List<string> Roles { get; } = new List<string> { "site:youtubelive", "gui" };
         YouTubeLiveSiteContext _context;
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {

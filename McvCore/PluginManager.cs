@@ -175,7 +175,14 @@ class PluginManagerActor : ReceiveActor
     }
     private static IActorRef CreateActor(IPlugin plugin, ICoreLogger logger)
     {
-        return Context.ActorOf(PluginActor.Props(plugin, logger).WithDispatcher("akka.actor.synchronized-dispatcher"));
+        if (plugin.Roles.Contains("gui"))
+        {
+            return Context.ActorOf(PluginActor.Props(plugin, logger).WithDispatcher("akka.actor.synchronized-dispatcher"));
+        }
+        else
+        {
+            return Context.ActorOf(PluginActor.Props(plugin, logger));
+        }
     }
     public void AddPlugin(IPlugin plugin, IPluginHost host)
     {

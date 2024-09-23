@@ -1,5 +1,6 @@
 ﻿using Mcv.PluginV2;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -38,12 +39,12 @@ class UserStoreManager : IUserStoreManager
         try
         {
             userStore.UserAdded += (s, e) => UserAdded?.Invoke(s, e);
-            _dict.Add(siteType, userStore);
+            _dict.TryAdd(siteType, userStore);
         }
         catch (Exception ex)
         {
             Debug.WriteLine(ex.Message);
         }
     }
-    readonly Dictionary<PluginId, IUserStore> _dict = new();
+    readonly ConcurrentDictionary<PluginId, IUserStore> _dict = new();
 }

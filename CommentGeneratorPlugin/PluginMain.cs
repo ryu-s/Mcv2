@@ -24,7 +24,7 @@ public class PluginMain : IPlugin
     public IPluginHost Host { get; set; } = default!;
     public PluginId Id { get; } = new PluginId(new Guid("7D00F365-630A-4BE2-88F7-11AE8FC8016A"));
     public string Name { get; } = "コメジェネ連携";
-    public List<string> Roles { get; } = [];
+    public List<string> Roles { get; } = ["gui"];
     private readonly Options _options = new();
     public async Task<IReplyMessageToPluginV2> RequestMessageAsync(IGetMessageToPluginV2 message)
     {
