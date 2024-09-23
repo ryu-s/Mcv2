@@ -71,7 +71,6 @@ public class PluginMain : IPlugin
         new TwitchMessageConverter(),
         new NicoMessageConverter(),
         new TwicasMessageConverter(),
-        new LineLiveMessageConverter(),
         new WhowatchMessageConverter(),
         new MirrativMessageConverter(),
         new ShowRoomMessageConverter(),

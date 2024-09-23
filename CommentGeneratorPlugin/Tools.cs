@@ -46,9 +46,6 @@ public static class Tools
             case MirrativSitePlugin.IMirrativMessage _:
                 siteName = "mirrativ";
                 break;
-            case LineLiveSitePlugin.ILineLiveMessage _:
-                siteName = "linelive";
-                break;
             case ShowRoomSitePlugin.IShowRoomMessage _:
                 siteName = "showroom";
                 break;
