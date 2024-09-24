@@ -749,5 +749,10 @@ namespace Mcv.MainViewPlugin
         {
             _host.SetMessageAsync(new SetException(ex, "", ""));
         }
+
+        public void OnDownloadProgressReceived(NotifyDownloadProgress progress)
+        {
+            UpdateProgressChanged?.Invoke(this, new UpdateProgressChangedEventArgs(progress.Progress));
+        }
     }
 }

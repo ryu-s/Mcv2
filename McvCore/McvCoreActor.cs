@@ -334,7 +334,11 @@ class McvCoreActor : ReceiveActor
     private async Task OnRequestUpdate(string url, string zipFilePath)
     {
         {
-            await _updater.Update(url, zipFilePath, GetAppDirPath());
+            var updateSuccess = await _updater.Update(url, zipFilePath, GetAppDirPath());
+            if (!updateSuccess)
+            {
+                return;
+            }
 
             try
             {
@@ -574,6 +578,11 @@ class McvCoreActor : ReceiveActor
         //error.txtがあったらサーバに送信して削除する
         await SendErrorLogFile(GetAppName(), GetAppVersion());
 
+        //".old"を付けたファイルを削除する
+        DeleteOldFiles(GetAppDirPath());
+        //空になったディレクトリを削除する
+        DeleteFilelessDirectories(GetAppDirPath());
+
         _splashVm.AddLog("設定の読み込み");
         _coreOptions = LoadOptions(OptionsPath, _logger);
 
@@ -599,6 +608,54 @@ class McvCoreActor : ReceiveActor
 
         return true;
     }
+
+    private void DeleteOldFiles(string path)
+    {
+        foreach (var f in Directory.GetFiles(path, "*.old", SearchOption.AllDirectories))
+        {
+            try
+            {
+                File.Delete(f);
+            }
+            catch (Exception ex)
+            {
+                _logger.AddLog(ex);
+            }
+        }
+    }
+
+    private static void DeleteFilelessDirectories(string path)
+    {
+        //コンテンツがサブディレクトリのみのディレクトリも削除する
+        foreach (var dir in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+        {
+            if (IsDirectoryFileless(dir))
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+    }
+    /// <summary>
+    /// 最下層まで行っても一切ファイルが存在しないディレクトリであるか
+    /// </summary>
+    /// <param name="dir"></param>
+    /// <returns></returns>
+    private static bool IsDirectoryFileless(string dir)
+    {
+        if (Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly).Length > 0)
+        {
+            return false;
+        }
+        foreach (var sub in Directory.GetDirectories(dir, "*", SearchOption.TopDirectoryOnly))
+        {
+            if (!IsDirectoryFileless(sub))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void UserStoreManager_UserAdded(object? sender, McvUser e)
     {
     }

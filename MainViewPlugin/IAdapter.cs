@@ -2,10 +2,13 @@
 using Mcv.PluginV2;
 using System;
 using System.Threading.Tasks;
+using Mcv.PluginV2.Messages;
 
 namespace Mcv.MainViewPlugin;
 interface IShareMethods
 {
+    event EventHandler<UpdateProgressChangedEventArgs>? UpdateProgressChanged;
+    void OnDownloadProgressReceived(NotifyDownloadProgress progress);
     Task<(bool updateExists, string url, string current, string latest)> CheckIfUpdateExistsAsync();
     MyUser GetUser(string userId);
 }
@@ -23,7 +26,7 @@ interface IMainViewHostAdapter : IConnectionNameHost, IConnectionViewModelHost, 
     event EventHandler<UserAddedEventArgs>? UserAdded;
     event EventHandler<UserRemovedEventArgs>? UserRemoved;
     event EventHandler<SuggestToUpdateEventArgs>? SuggestToUpdateEvent;
-    event EventHandler<UpdateProgressChangedEventArgs>? UpdateProgressChanged;
+
     event EventHandler<PluginAddedEventArgs>? PluginAdded;
     IMainViewPluginOptions Options { get; }
     void RemoveConnections(List<ConnectionId> selectedConnections);

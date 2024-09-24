@@ -76,7 +76,7 @@ public class MainViewPlugin : IPlugin
                 }
                 break;
             case NotifyDownloadProgress progress:
-                //_adapter.OnDownloadProgress(progress);
+                _adapter.OnDownloadProgressReceived(progress);
                 break;
         }
     }

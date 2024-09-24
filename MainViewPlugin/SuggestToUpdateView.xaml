@@ -8,7 +8,7 @@
         d:DataContext="{d:DesignInstance local:SuggestToUpdateViewModel, IsDesignTimeCreatable=True}"
         Title="SuggestToUpdateView" Height="465" Width="740">
     <Grid>
-        <Grid Margin="137,164,125,195" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid Margin="137,29,125,330">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
@@ -21,7 +21,7 @@
 
         <Button x:Name="btnOk" Content="はい" Command="{Binding OkCommand}" HorizontalAlignment="Left" Margin="125,324,0,0" VerticalAlignment="Top"/>
         <Button x:Name="btnCancel" Content="いいえ" Command="{Binding CancelCommand}" HorizontalAlignment="Left" Margin="370,324,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="label" Content="{Binding Log}" HorizontalAlignment="Left" Margin="118,284,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="label" Text="{Binding Log,UpdateSourceTrigger=PropertyChanged}" Margin="70,119,112,150" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Visible" />
 
     </Grid>
 </Window>

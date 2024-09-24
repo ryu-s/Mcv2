@@ -145,7 +145,7 @@ namespace Mcv.MainViewPlugin
     class SuggestToUpdateViewModel : ViewModelBase, INotifyPropertyChanged
     {
         private readonly IMainViewHostAdapter _adapter;
-        private string _log;
+        private string _log="";
 
         public SuggestToUpdateViewModel()
         {
@@ -171,7 +171,11 @@ namespace Mcv.MainViewPlugin
             CancelCommand = new RelayCommand(Cancel);
             adapter.UpdateProgressChanged += (s, e) =>
             {
-                Log = e.Message;
+                if (!string.IsNullOrEmpty(Log))
+                {
+                    Log += Environment.NewLine;
+                }
+                Log += e.Message;
             };
         }
 
