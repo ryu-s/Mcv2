@@ -137,14 +137,9 @@ namespace Mcv.MainViewPlugin
         public string CurrentVersion { get; }
         public string LatestVersion { get; }
     }
-    class UpdateProgressChangedEventArgs : EventArgs
+    class UpdateProgressChangedEventArgs(IUpdateProgressData data) : EventArgs
     {
-        public UpdateProgressChangedEventArgs(string message)
-        {
-            Message = message;
-        }
-
-        public string Message { get; }
+        public IUpdateProgressData Data { get; } = data;
     }
     class Adapter : IMainViewHostAdapter, IPluginMainHost
     {

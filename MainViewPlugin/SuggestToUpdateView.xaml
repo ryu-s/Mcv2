@@ -8,7 +8,11 @@
         d:DataContext="{d:DesignInstance local:SuggestToUpdateViewModel, IsDesignTimeCreatable=True}"
         Title="SuggestToUpdateView" Height="465" Width="740">
     <Grid>
-        <Grid Margin="137,29,125,330">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="51*"/>
+            <ColumnDefinition Width="23*"/>
+        </Grid.ColumnDefinitions>
+        <Grid Margin="137,29,125,330" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
@@ -19,9 +23,11 @@
             <Label x:Name="labelArrow" Content="→" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" />
         </Grid>
 
-        <Button x:Name="btnOk" Content="はい" Command="{Binding OkCommand}" HorizontalAlignment="Left" Margin="125,324,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnCancel" Content="いいえ" Command="{Binding CancelCommand}" HorizontalAlignment="Left" Margin="370,324,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="label" Text="{Binding Log,UpdateSourceTrigger=PropertyChanged}" Margin="70,119,112,150" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Visible" />
+        <Button x:Name="btnOk" Content="はい" Command="{Binding OkCommand}" IsEnabled="{Binding IsOkEnabled}" HorizontalAlignment="Left" Margin="215,404,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnCancel" Content="いいえ" Command="{Binding CancelCommand}" IsEnabled="{Binding IsCancelEnabled}" HorizontalAlignment="Left" Margin="316,404,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="label" Text="{Binding Log,UpdateSourceTrigger=PropertyChanged}" Margin="80,119,102,150" VerticalScrollBarVisibility="Visible" Grid.ColumnSpan="2" />
+        <Label x:Name="labelDownloadedSize" Content="{Binding TotalBytesDownloaded}" HorizontalAlignment="Left" Margin="170,314,0,0" VerticalAlignment="Top" />
+        <Label x:Name="labelTotalSize" Content="{Binding TotalFileSize}" HorizontalAlignment="Left" Margin="269,314,0,0" VerticalAlignment="Top" />
 
     </Grid>
 </Window>

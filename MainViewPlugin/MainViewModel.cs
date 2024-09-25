@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using Mcv.PluginV2;
+using Mcv.PluginV2.Messages;
 using MultiCommentViewer.ViewModels;
 using System;
 using System.Collections.Concurrent;
@@ -145,7 +146,9 @@ namespace Mcv.MainViewPlugin
     class SuggestToUpdateViewModel : ViewModelBase, INotifyPropertyChanged
     {
         private readonly IMainViewHostAdapter _adapter;
-        private string _log="";
+        private string _log = "";
+        private bool isOkEnabled;
+        private bool isCancelEnabled;
 
         public SuggestToUpdateViewModel()
         {
@@ -160,6 +163,8 @@ namespace Mcv.MainViewPlugin
             CancelCommand = new RelayCommand(() => { });
             _adapter = default!;
             _log = "LOG";
+            TotalBytesDownloaded = 1000;
+            TotalFileSize = 2000;
         }
         public SuggestToUpdateViewModel(string url, string current, string latest, IMainViewHostAdapter adapter)
         {
@@ -169,21 +174,70 @@ namespace Mcv.MainViewPlugin
             _adapter = adapter;
             OkCommand = new RelayCommand(Ok);
             CancelCommand = new RelayCommand(Cancel);
+            IsOkEnabled = true;
+            IsCancelEnabled = true;
+            TotalBytesDownloaded = 0;
+            TotalFileSize = 0;
             adapter.UpdateProgressChanged += (s, e) =>
             {
-                if (!string.IsNullOrEmpty(Log))
+                if (e.Data is UpdateProgressMessage message)
                 {
-                    Log += Environment.NewLine;
+                    if (!string.IsNullOrEmpty(Log))
+                    {
+                        Log += Environment.NewLine;
+                    }
+                    Log += message.Progress;
                 }
-                Log += e.Message;
+                else if (e.Data is DownloadProgress progress)
+                {
+                    TotalBytesDownloaded = progress.TotalBytesDownloaded;
+                    TotalFileSize = progress.TotalFileSize ?? 0;
+                }
             };
         }
-
+        private long _totalBytesDownloaded;
+        public long TotalBytesDownloaded
+        {
+            get => _totalBytesDownloaded;
+            private set
+            {
+                _totalBytesDownloaded = value;
+                RaisePropertyChanged();
+            }
+        }
+        private long _totalFileSize;
+        public long TotalFileSize
+        {
+            get => _totalFileSize;
+            private set
+            {
+                _totalFileSize = value;
+                RaisePropertyChanged();
+            }
+        }
         public string Url { get; }
         public string CurrentVersion { get; }
         public string LatestVersion { get; }
         public ICommand OkCommand { get; }
         public ICommand CancelCommand { get; }
+        public bool IsOkEnabled
+        {
+            get => isOkEnabled;
+            private set
+            {
+                isOkEnabled = value;
+                RaisePropertyChanged();
+            }
+        }
+        public bool IsCancelEnabled
+        {
+            get => isCancelEnabled;
+            private set
+            {
+                isCancelEnabled = value;
+                RaisePropertyChanged();
+            }
+        }
         public string Log
         {
             get
@@ -201,6 +255,8 @@ namespace Mcv.MainViewPlugin
             try
             {
                 _adapter.RequestUpdate(LatestVersion, Url);
+                IsOkEnabled = false;
+                IsCancelEnabled = false;
             }
             catch (Exception ex)
             {
@@ -210,32 +266,6 @@ namespace Mcv.MainViewPlugin
         private void Cancel()
         {
             WeakReferenceMessenger.Default.Send(new SuggestToUpdateViewCloseMessage());
-        }
-    }
-    class DownloadViewModel : ViewModelBase, INotifyPropertyChanged
-    {
-        private readonly IMainViewHostAdapter _adapter;
-        private string _log;
-        public DownloadViewModel()
-        {
-            _log = "TEST";
-        }
-        public DownloadViewModel(IMainViewHostAdapter adapter)
-        {
-            Log = "";
-            _adapter = adapter;
-        }
-        public string Log
-        {
-            get
-            {
-                return _log;
-            }
-            set
-            {
-                _log = value;
-                RaisePropertyChanged();
-            }
         }
     }
     class DesignTimeComment : IMcvCommentViewModel

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mcv.PluginV2.Messages;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,7 +16,7 @@ class Updater
 {
     private readonly ICoreLogger _logger;
 
-    public event EventHandler<string>? ProgressChanged;
+    public event EventHandler<IUpdateProgressData>? ProgressChanged;
     public async Task<bool> Update(string url, string zipFilePath, string _appDirPath)
     {
         //"System.IO.Compression"から始まるzip関連のdllだけ残して他は全て削除してからzipファイルを展開しようとすると"System.IO.Compression, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"が存在しないと言われてうまくいかなかった。
@@ -118,11 +119,15 @@ class Updater
     }
     private void RaiseProgressChanged(string s)
     {
-        ProgressChanged?.Invoke(this, s);
+        ProgressChanged?.Invoke(this, new UpdateProgressMessage(s));
+    }
+    private void RaiseProgressChanged(ProgressChangedEventArgs e)
+    {
+        ProgressChanged?.Invoke(this, new DownloadProgress(e.TotalFileSize, e.TotalBytesDownloaded, e.ProgressPercentage));
     }
     private void HttpClient_ProgressChanged(object? sender, ProgressChangedEventArgs e)
     {
-        RaiseProgressChanged($"{e.ProgressPercentage}, {e.TotalBytesDownloaded} / {e.TotalFileSize}");
+        RaiseProgressChanged(e);
     }
     private void AppendOldToOldFiles(string _appDirPath)
     {
