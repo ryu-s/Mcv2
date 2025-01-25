@@ -1,17 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using System.Windows.Media.Animation;
 
 namespace Mcv.NicoSitePlugin.InternalMessage;
-public record class Field(ulong No, IValueType Value);
-public interface IValueType { }
-public class Varint : IValueType
+class ParseException : Exception
+{
+    public ParseException()
+    {
+    }
+    public ParseException(string? message) : base(message)
+    {
+    }
+    public ParseException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}
+record class Field(ulong No, IValueType Value);
+interface IValueType { }
+class Varint : IValueType
 {
     public ulong Value { get; set; }
     public Varint(ulong value)
@@ -59,7 +67,7 @@ public class LengthDelimited : IValueType
         return new LengthDelimited(Encoding.UTF8.GetBytes(s));
     }
 }
-public static class ProtobufParser
+static class ProtobufParser
 {
     public static List<Field> Parse(byte[] data)
     {
@@ -105,7 +113,7 @@ public static class ProtobufParser
                     }
                     break;
                 default:
-                    throw new InvalidOperationException("Invalid type");
+                    throw new ParseException("Invalid type");
             }
         }
         return fields;
@@ -131,7 +139,7 @@ public static class ProtobufParser
             }
             shift += 7;
         }
-        throw new InvalidOperationException("Invalid varint");
+        throw new ParseException("Invalid varint");
     }
     /// <summary>
     /// 
@@ -204,6 +212,8 @@ class ChunkedEntry
                     case 4:
                         next = ReadyForNext.Create(((LengthDelimited)field.Value).Bytes);
                         break;
+                    default:
+                        throw new ParseException();
                 }
             }
             list.Add(new ChunkedEntry(segment, backward, previous, next));
@@ -323,107 +333,11 @@ class ChunkedMessage
                     signal = (Signal)((Varint)ca.Value).Value;
                     break;
                 default:
-                    break;
+                    throw new ParseException();
             }
         }
-
-
-        //var c0 = ProtobufParser.Parse(((LengthDelimited)c[0].Value).Bytes);
-        //var s = Encoding.UTF8.GetString(((LengthDelimited)c0[0].Value).Bytes);
-        //Debug.WriteLine(s);
-        //var c01t = Timestamp.Create(((LengthDelimited)c0[1].Value).Bytes);
-
-        //var c02 = ProtobufParser.Parse(((LengthDelimited)c0[2].Value).Bytes);
-
-
         return new ChunkedMessage(meta!, message, state, signal);
     }
-    //public static ChunkedMessage Create(byte[] bytes)
-    //{
-    //    Meta? meta = null;
-    //    NicoliveMessage? message = null;
-    //    NicoliveState? state = null;
-    //    var a0 = ProtobufParser.Parse(bytes);
-    //    foreach (var entry in a0)
-    //    {
-    //        switch (entry.No)
-    //        {
-    //            case 1:
-    //                meta = Meta.Create(((LengthDelimited)entry.Value).Bytes);
-    //                break;
-    //            case 2:
-    //                {
-    //                    var a = ProtobufParser.Parse(((LengthDelimited)entry.Value).Bytes);
-    //                    var b = ProtobufParser.Parse(((LengthDelimited)a[0].Value).Bytes);
-    //                    foreach (var part in b)
-    //                    {
-    //                        switch (part.No)
-    //                        {
-    //                            case 1:
-    //                                {
-    //                                    var s = Encoding.UTF8.GetString(((LengthDelimited)part.Value).Bytes);
-    //                                }
-    //                                break;
-    //                            case 7:
-    //                                {
-    //                                    if (((LengthDelimited)part.Value).Bytes.Length > 0)
-    //                                    {
-
-    //                                    }
-    //                                }
-    //                                break;
-    //                            case 8:
-    //                                {
-    //                                    var n = ((Varint)part.Value).Value;
-    //                                }
-    //                                break;
-    //                            case 9:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            case 13:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            case 17:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            case 18:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            case 19:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            case 20:
-    //                                {
-
-    //                                }
-    //                                break;
-    //                            default:
-    //                                break;
-    //                        }
-    //                    }
-    //                }
-    //                break;
-    //            case 4:
-    //                break;
-    //            case 5:
-    //                //signal
-    //                break;
-    //            default:
-    //                break;
-    //        }
-    //    }
-    //    return new ChunkedMessage(meta, message, state);
-    //}
 }
 enum Signal
 {
@@ -513,9 +427,9 @@ class Chat
     public AccountStatus AccountStatus { get; }
     public long? RawUserId { get; }
     public string? HashedUserId { get; }
-    public object Modifier { get; }
+    public ChatModifier? Modifier { get; }
     public int No { get; }
-    public Chat(string content, string name, int vpos, AccountStatus accountStatus, long? rawUserId, string? hashedUserId, object modifier, int no)
+    public Chat(string content, string name, int vpos, AccountStatus accountStatus, long? rawUserId, string? hashedUserId, ChatModifier? modifier, int no)
     {
         Content = content;
         Name = name;
@@ -535,7 +449,7 @@ class Chat
         AccountStatus? ac = null;
         long? raw_user_id = null;
         string? hashed_user_id = null;
-        object? modifier = null;
+        ChatModifier? modifier = null;
         int? no = null;
         foreach (var p in c10)
         {
@@ -560,60 +474,14 @@ class Chat
                 case 6:
                     hashed_user_id = Encoding.UTF8.GetString(((LengthDelimited)p.Value).Bytes);
                     break;
-                case 7://modifier
-                    var n = ((LengthDelimited)p.Value).Bytes;
-                    if (n.Length > 0)
-                    {
-                        var ttt = ProtobufParser.Parse(n);
-                        switch (ttt[0].No)
-                        {
-                            case 1://
-                                var position = (Pos)((Varint)ttt[0].Value).Value;
-                                break;
-                            case 2:
-                                var size = (Size)((Varint)ttt[0].Value).Value;
-                                break;
-                            case 3:
-                                var namedColor = (ColorName)((Varint)ttt[0].Value).Value;
-                                break;
-                            case 4://full_color
-                                var full_color = ProtobufParser.Parse(((LengthDelimited)ttt[0].Value).Bytes);
-                                foreach (var full_color_part in full_color)
-                                {
-                                    switch (full_color_part.No)
-                                    {
-                                        case 1:
-                                            var r = ((Varint)full_color_part.Value).Value;
-                                            break;
-                                        case 2:
-                                            var g = ((Varint)full_color_part.Value).Value;
-                                            break;
-                                        case 3:
-                                            var b = ((Varint)full_color_part.Value).Value;
-                                            break;
-                                    }
-                                }
-                                break;
-                            case 5://font
-                                break;
-                            case 6://opacity
-                                {
-                                    var b = ((Varint)ttt[0].Value).Value;
-
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-
-                    }
-                    modifier = new object();
+                case 7://modifier                    
+                    modifier = ChatModifier.Create(((LengthDelimited)p.Value).Bytes);
                     break;
                 case 8:
                     no = (int)((Varint)p.Value).Value;
                     break;
                 default:
-                    break;
+                    throw new ParseException();
 
             }
         }
@@ -678,10 +546,10 @@ class SimpleNotification
                     var a8 = Encoding.UTF8.GetString(((LengthDelimited)part.Value).Bytes);
                     return new SimpleNotification { RankingUpdated = a8 };
                 default:
-                    return new SimpleNotification();
+                    throw new ParseException();
             }
         }
-        return new SimpleNotification();
+        throw new ParseException();
     }
 }
 class Gift
@@ -693,7 +561,11 @@ class Gift
     public string? Message { get; }//nullの場合があった
     public string ItemName { get; }
     public long? ContributionRank { get; }
-    public Gift(string itemId, long? advertiserUserId, string advertiserName, long point, string? message, string itemName, long? contributionRank)
+    /// <summary>
+    /// ニコ生のコメント欄に表示される文字列
+    /// </summary>
+    public string Content { get; }
+    public Gift(string itemId, long? advertiserUserId, string advertiserName, long point, string? message, string itemName, long? contributionRank, string content)
     {
         ItemId = itemId;
         AdvertiserUserId = advertiserUserId;
@@ -702,6 +574,7 @@ class Gift
         Message = message;
         ItemName = itemName;
         ContributionRank = contributionRank;
+        Content = content;
     }
     public static Gift Create(byte[] bytes)
     {
@@ -740,8 +613,8 @@ class Gift
                     break;
             }
         }
-
-        return new Gift(itemId!, advertiserUserId, advertiserName!, point!.Value, message, itemName!, contributionRank);
+        var content = $"{advertiserName}さんがギフト「{itemName}（{point}pt）」を贈りました";
+        return new Gift(itemId!, advertiserUserId, advertiserName!, point!.Value, message, itemName!, contributionRank, content);
     }
 }
 class Tag
@@ -789,12 +662,20 @@ class Tag
 }
 class TagUpdated
 {
+    public List<Tag> Tags { get; private set; }
+    public bool OwnerLocked { get; private set; }
+    public TagUpdated(List<Tag> tags, bool ownerLocked)
+    {
+        Tags = tags;
+        OwnerLocked = ownerLocked;
+    }
     public static TagUpdated Create(byte[] bytes)
     {
         //0x0A, 0x53, 0x0A, 0x0C, 0xE4, 0xB8, 0x80, 0xE8, 0x88, 0xAC, 0xE4, 0xBC, 0x9A, 0xE5, 0x93, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x3F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x34, 0x25, 0x42, 0x38, 0x25, 0x38, 0x30, 0x25, 0x45, 0x38, 0x25, 0x38, 0x38, 0x25, 0x41, 0x43, 0x25, 0x45, 0x34, 0x25, 0x42, 0x43, 0x25, 0x39, 0x41, 0x25, 0x45, 0x35, 0x25, 0x39, 0x33, 0x25, 0x41, 0x31, 0x0A, 0x3F, 0x0A, 0x08, 0x48, 0x44, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x2F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x48, 0x44, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x8F, 0x01, 0x0A, 0x1B, 0xE3, 0x82, 0xB9, 0xE3, 0x83, 0x9E, 0xE3, 0x83, 0xBC, 0xE3, 0x83, 0x88, 0xE3, 0x83, 0x95, 0xE3, 0x82, 0xA9, 0xE3, 0x83, 0xB3, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x6C, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x45, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x38, 0x38, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x35, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x33, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x10, 0x0A, 0x0C, 0xE9, 0x9B, 0x91, 0xE8, 0xAB, 0x87, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x0A, 0x13, 0x0A, 0x0F, 0xE5, 0xA5, 0xB3, 0xE6, 0x80, 0xA7, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0xE8, 0x80, 0x85, 0x10, 0x01, 0x0A, 0x81, 0x01, 0x0A, 0x18, 0xE3, 0x82, 0xB7, 0xE3, 0x83, 0xAB, 0xE3, 0x83, 0x90, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xA6, 0xE3, 0x82, 0xA4, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xAF, 0x10, 0x01, 0x22, 0x63, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x37, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x41, 0x42, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x30, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x36, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x34, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x46, 0x0A, 0x29, 0x0A, 0x27, 0xE7, 0xA7, 0x8B, 0xE5, 0x88, 0x86, 0xE3, 0x81, 0xAE, 0xE6, 0x97, 0xA5, 0xEF, 0xBC, 0x88, 0xE3, 0x81, 0x97, 0xE3, 0x82, 0x85, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xB6, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xAE, 0xE3, 0x81, 0xB2, 0xEF, 0xBC, 0x89, 0x0A, 0x43, 0x0A, 0x09, 0xE3, 0x81, 0xBE, 0xE3, 0x81, 0x81, 0xE3, 0x82, 0x8B, 0x22, 0x36, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x6C, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x31, 0x25, 0x42, 0x45, 0x25, 0x45, 0x33, 0x25, 0x38, 0x31, 0x25, 0x38, 0x31, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x38, 0x42, 0x0A, 0x4F, 0x0A, 0x0C, 0xE3, 0x81, 0x8B, 0xE3, 0x82, 0x8F, 0xE3, 0x81, 0x84, 0xE3, 0x81, 0x84, 0x22, 0x3F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x31, 0x25, 0x38, 0x42, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x38, 0x46, 0x25, 0x45, 0x33, 0x25, 0x38, 0x31, 0x25, 0x38, 0x34, 0x25, 0x45, 0x33, 0x25, 0x38, 0x31, 0x25, 0x38, 0x34
         //0x0A, 0x53, 0x0A, 0x0C, 0xE4, 0xB8, 0x80, 0xE8, 0x88, 0xAC, 0xE4, 0xBC, 0x9A, 0xE5, 0x93, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x3F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x34, 0x25, 0x42, 0x38, 0x25, 0x38, 0x30, 0x25, 0x45, 0x38, 0x25, 0x38, 0x38, 0x25, 0x41, 0x43, 0x25, 0x45, 0x34, 0x25, 0x42, 0x43, 0x25, 0x39, 0x41, 0x25, 0x45, 0x35, 0x25, 0x39, 0x33, 0x25, 0x41, 0x31, 0x0A, 0x3F, 0x0A, 0x08, 0x48, 0x44, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x2F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x48, 0x44, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x8F, 0x01, 0x0A, 0x1B, 0xE3, 0x82, 0xB9, 0xE3, 0x83, 0x9E, 0xE3, 0x83, 0xBC, 0xE3, 0x83, 0x88, 0xE3, 0x83, 0x95, 0xE3, 0x82, 0xA9, 0xE3, 0x83, 0xB3, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x6C, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x45, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x38, 0x38, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x35, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x33, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x10, 0x0A, 0x0C, 0xE9, 0x9B, 0x91, 0xE8, 0xAB, 0x87, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x0A, 0x13, 0x0A, 0x0F, 0xE5, 0xA5, 0xB3, 0xE6, 0x80, 0xA7, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0xE8, 0x80, 0x85, 0x10, 0x01, 0x0A, 0x81, 0x01, 0x0A, 0x18, 0xE3, 0x82, 0xB7, 0xE3, 0x83, 0xAB, 0xE3, 0x83, 0x90, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xA6, 0xE3, 0x82, 0xA4, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xAF, 0x10, 0x01, 0x22, 0x63, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x37, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x41, 0x42, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x30, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x36, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x34, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x46, 0x0A, 0x29, 0x0A, 0x27, 0xE7, 0xA7, 0x8B, 0xE5, 0x88, 0x86, 0xE3, 0x81, 0xAE, 0xE6, 0x97, 0xA5, 0xEF, 0xBC, 0x88, 0xE3, 0x81, 0x97, 0xE3, 0x82, 0x85, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xB6, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xAE, 0xE3, 0x81, 0xB2, 0xEF, 0xBC, 0x89, 0x0A, 0x0E, 0x0A, 0x0C, 0xE3, 0x81, 0xBE, 0xE3, 0x83, 0xBC, 0xE3, 0x81, 0xBF, 0xE3, 0x83, 0xBC, 0x0A, 0x1A, 0x0A, 0x18, 0xE3, 0x82, 0xBB, 0xE3, 0x82, 0xAF, 0xE3, 0x82, 0xB7, 0xE3, 0x83, 0xBC, 0xE3, 0x81, 0x8A, 0xE5, 0xA7, 0x89, 0xE3, 0x81, 0x95, 0xE3, 0x82, 0x93
         //0x0A, 0x53, 0x0A, 0x0C, 0xE4, 0xB8, 0x80, 0xE8, 0x88, 0xAC, 0xE4, 0xBC, 0x9A, 0xE5, 0x93, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x3F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x34, 0x25, 0x42, 0x38, 0x25, 0x38, 0x30, 0x25, 0x45, 0x38, 0x25, 0x38, 0x38, 0x25, 0x41, 0x43, 0x25, 0x45, 0x34, 0x25, 0x42, 0x43, 0x25, 0x39, 0x41, 0x25, 0x45, 0x35, 0x25, 0x39, 0x33, 0x25, 0x41, 0x31, 0x0A, 0x3F, 0x0A, 0x08, 0x48, 0x44, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x2F, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x48, 0x44, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x8F, 0x01, 0x0A, 0x1B, 0xE3, 0x82, 0xB9, 0xE3, 0x83, 0x9E, 0xE3, 0x83, 0xBC, 0xE3, 0x83, 0x88, 0xE3, 0x83, 0x95, 0xE3, 0x82, 0xA9, 0xE3, 0x83, 0xB3, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x18, 0x01, 0x22, 0x6C, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x45, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x38, 0x38, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x35, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x39, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x33, 0x25, 0x45, 0x39, 0x25, 0x38, 0x35, 0x25, 0x38, 0x44, 0x25, 0x45, 0x34, 0x25, 0x42, 0x46, 0x25, 0x41, 0x31, 0x0A, 0x10, 0x0A, 0x0C, 0xE9, 0x9B, 0x91, 0xE8, 0xAB, 0x87, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0x10, 0x01, 0x0A, 0x13, 0x0A, 0x0F, 0xE5, 0xA5, 0xB3, 0xE6, 0x80, 0xA7, 0xE9, 0x85, 0x8D, 0xE4, 0xBF, 0xA1, 0xE8, 0x80, 0x85, 0x10, 0x01, 0x0A, 0x81, 0x01, 0x0A, 0x18, 0xE3, 0x82, 0xB7, 0xE3, 0x83, 0xAB, 0xE3, 0x83, 0x90, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xA6, 0xE3, 0x82, 0xA4, 0xE3, 0x83, 0xBC, 0xE3, 0x82, 0xAF, 0x10, 0x01, 0x22, 0x63, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x64, 0x69, 0x63, 0x2E, 0x6E, 0x69, 0x63, 0x6F, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x2E, 0x6A, 0x70, 0x2F, 0x61, 0x2F, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x42, 0x37, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x41, 0x42, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x39, 0x30, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x36, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x34, 0x25, 0x45, 0x33, 0x25, 0x38, 0x33, 0x25, 0x42, 0x43, 0x25, 0x45, 0x33, 0x25, 0x38, 0x32, 0x25, 0x41, 0x46
         var tags = new List<Tag>();
+        var ownerLocked = false;
         var ns = ProtobufParser.Parse(bytes);
         foreach (var n in ns)
         {
@@ -806,49 +687,70 @@ class TagUpdated
                 case 2://owner_locked
                     break;
                 default:
+                    throw new ParseException();
+            }
+        }
+        return new TagUpdated(tags, ownerLocked);
+    }
+}
+class NicoadV1
+{
+    public int TotalAdPoint { get; private set; }
+    public string Message { get; private set; }
+    public NicoadV1(int totalAdPoint, string message)
+    {
+        TotalAdPoint = totalAdPoint;
+        Message = message;
+    }
+    public static NicoadV1 Create(byte[] bytes)
+    {
+        var zav = ProtobufParser.Parse(bytes);
+        int? totalAdPoint = null;
+        string? message = null;
+        foreach (var zavk in zav)
+        {
+            switch (zavk.No)
+            {
+                case 1:
+                    totalAdPoint = (int)((Varint)zavk.Value).Value;
+                    break;
+                case 2:
+                    message = Encoding.UTF8.GetString(((LengthDelimited)zavk.Value).Bytes);
+                    //【広告貢献1位】シガラフさんが2000ptニコニ広告しました「ガンプラを愛するすべての人へ　あなたはSEED？それともディスティニー？」
+                    //【広告貢献4位】ぐるぐるさんが800ptニコニ広告しました
+                    //【広告貢献4位】ぐるぐるさんが800ptニコニ広告しました「もう一回、遊べるドン！！」
+                    //758さんが400ptニコニ広告しました
+                    break;
+                default:
                     break;
             }
         }
-        return new TagUpdated();
+        return new NicoadV1(totalAdPoint!.Value, message!);
     }
 }
 class Nicoad
 {
+    public NicoadV1? V1 { get; private set; }
+    public Nicoad(NicoadV1? v1)
+    {
+        V1 = v1;
+    }
     public static Nicoad Create(byte[] bytes)
     {
+        NicoadV1? v1 = null;
         var z = ProtobufParser.Parse(bytes);
         foreach (var za in z)
         {
             switch (za.No)
             {
                 case 2:
-                    var zav = ProtobufParser.Parse(((LengthDelimited)za.Value).Bytes);
-                    int? totalAdPoint = null;
-                    string? message = null;
-                    foreach (var zavk in zav)
-                    {
-                        switch (zavk.No)
-                        {
-                            case 1:
-                                totalAdPoint = (int)((Varint)zavk.Value).Value;
-                                break;
-                            case 2:
-                                message = Encoding.UTF8.GetString(((LengthDelimited)zavk.Value).Bytes);
-                                //【広告貢献1位】シガラフさんが2000ptニコニ広告しました「ガンプラを愛するすべての人へ　あなたはSEED？それともディスティニー？」
-                                //【広告貢献4位】ぐるぐるさんが800ptニコニ広告しました
-                                //【広告貢献4位】ぐるぐるさんが800ptニコニ広告しました「もう一回、遊べるドン！！」
-                                //758さんが400ptニコニ広告しました
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+                    v1 = NicoadV1.Create(((LengthDelimited)za.Value).Bytes);
                     break;
                 default:
-                    break;
+                    throw new ParseException();
             }
         }
-        return new Nicoad();
+        return new Nicoad(v1);
     }
 }
 class NicoliveMessage
@@ -906,76 +808,456 @@ enum ProgramState
     Unknown = 0,
     Ended = 1,
 }
-class Modifier
+class FullColor
 {
-    public static Modifier Create(byte[] bytes)
+    public static FullColor Create(byte[] bytes)
     {
-        return new Modifier();
+        var full_color = ProtobufParser.Parse(bytes);
+        foreach (var full_color_part in full_color)
+        {
+            switch (full_color_part.No)
+            {
+                case 1:
+                    var r = ((Varint)full_color_part.Value).Value;
+                    break;
+                case 2:
+                    var g = ((Varint)full_color_part.Value).Value;
+                    break;
+                case 3:
+                    var b = ((Varint)full_color_part.Value).Value;
+                    break;
+            }
+        }
+        throw new NotImplementedException();
+    }
+}
+class ChatModifier
+{
+    public Pos? Position { get; private set; }
+    public Size Size { get; private set; }
+    public ColorName? NamedColor { get; private set; }
+    public FullColor? FullColor { get; private set; }
+    public string? Font { get; private set; }
+    public ChatModifier(Pos? position)
+    {
+        Position = position;
+    }
+    public static ChatModifier? Create(byte[] bytes)
+    {
+        if (bytes.Length == 0)
+        {
+            return null;
+        }
+        Pos? position = null;
+        ColorName? namedColor = null;
+        FullColor? fullColor = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1://
+                    position = (Pos)((Varint)m.Value).Value;
+                    break;
+                case 2:
+                    var size = (Size)((Varint)m.Value).Value;
+                    break;
+                case 3:
+                    namedColor = (ColorName)((Varint)m.Value).Value;
+                    break;
+                case 4://full_color
+                    fullColor = FullColor.Create(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 5://font
+                    break;
+                case 6://opacity
+                    {
+                        var b = ((Varint)m.Value).Value;
+
+                    }
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new ChatModifier(position);
+    }
+}
+class OperatorComment
+{
+    public string Content { get; private set; }
+    public OperatorComment(string content, string? name, ChatModifier modifier, string? link)
+    {
+        Content = content;
+    }
+    public static OperatorComment Create(byte[] bytes)
+    {
+        string? content = null;
+        string? name = null;
+        ChatModifier? modifier = null;
+        string? link = null;
+
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1://content
+                    content = Encoding.UTF8.GetString(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 2://name
+                    name = Encoding.UTF8.GetString(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 3://modifier
+                    modifier = ChatModifier.Create(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 4://link
+                    link = Encoding.UTF8.GetString(((LengthDelimited)m.Value).Bytes);
+                    break;
+
+            }
+        }
+        return new OperatorComment(content!, name, modifier!, link);
+    }
+}
+class Display
+{
+    public OperatorComment OperatorComment { get; private set; }
+    public long? Duration { get; private set; }
+    public Display(OperatorComment operatorComment, long? duration)
+    {
+        OperatorComment = operatorComment;
+        Duration = duration;
+    }
+    public static Display Create(byte[] bytes)
+    {
+        OperatorComment? operatorComment = null;
+        long? duration = null;
+        var c = ProtobufParser.Parse(bytes);
+        foreach (var part in c)
+        {
+            switch (part.No)
+            {
+                case 1://operator_comment
+                    operatorComment = OperatorComment.Create(((LengthDelimited)part.Value).Bytes);
+                    break;
+                case 3://duration
+                    var a = ProtobufParser.Parse(((LengthDelimited)part.Value).Bytes);
+                    duration = (long)((Varint)a[0].Value).Value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return new Display(operatorComment!, duration);
+    }
+}
+class Marquee
+{
+    public Display? Display { get; private set; }
+    public Marquee(Display? display)
+    {
+        Display = display;
+    }
+    public static Marquee Create(byte[] bytes)
+    {
+        Display? display = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    display = Display.Create(((LengthDelimited)m.Value).Bytes);
+                    break;
+            }
+        }
+        return new Marquee(display);
+    }
+}
+class Jump
+{
+    //typeName:dwango.nicolive.chat.data.Jump
+    public string Content { get; private set; }
+    public string Message { get; private set; }
+    public int Wait { get; private set; }
+    public Jump(string content, string message, int wait)
+    {
+        Content = content;
+        Message = message;
+        Wait = wait;
+    }
+    public static Jump Create(byte[] bytes)
+    {
+        string? content = null;
+        string? message = null;
+        int? wait = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    content = Encoding.UTF8.GetString(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 2:
+                    message = Encoding.UTF8.GetString(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 4:
+                    {
+                        var a = ProtobufParser.Parse(((LengthDelimited)(m.Value)).Bytes);
+                        wait = (int)((Varint)a[0].Value).Value;
+                    }
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new Jump(content!, message!, wait!.Value);
+    }
+}
+class Redirect
+{
+    //typeName:dwango.nicolive.chat.data.Jump
+    public string Uri { get; private set; }
+    public string Message { get; private set; }
+    public int Wait { get; private set; }
+    public Redirect(string uri, string message, int wait)
+    {
+        Uri = uri;
+        Message = message;
+        Wait = wait;
+    }
+    public static Redirect Create(byte[] bytes)
+    {
+        string? uri = null;
+        string? message = null;
+        int? wait = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    uri = Encoding.UTF8.GetString(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 2:
+                    message = Encoding.UTF8.GetString(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 4:
+                    {
+                        var a = ProtobufParser.Parse(((LengthDelimited)(m.Value)).Bytes);
+                        wait = (int)((Varint)a[0].Value).Value;
+                    }
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new Redirect(uri!, message!, wait!.Value);
+    }
+}
+class MoveOrder
+{
+    public Jump? Jump { get; private set; }
+    public Redirect? Redirect { get; private set; }
+
+    public MoveOrder(Jump? jump, Redirect? redirect)
+    {
+        Jump = jump;
+        Redirect = redirect;
+    }
+    public static MoveOrder Create(byte[] bytes)
+    {
+        Jump? jump = null;
+        Redirect? redirect = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    jump = Jump.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 2:
+                    redirect = Redirect.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new MoveOrder(jump, redirect);
+    }
+}
+enum EnqueteStatus
+{
+    Closed = 0,
+    Poll = 1,
+    Result = 2,
+}
+class Choice
+{
+    public string Description { get; }
+    public int? PerMille { get; }
+    public Choice(string description, int? perMille)
+    {
+        Description = description;
+        PerMille = perMille;
+    }
+    public static Choice Create(byte[] bytes)
+    {
+        string? description = null;
+        int? perMille = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1://description
+                    description = Encoding.UTF8.GetString(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 3://per_mille
+                    perMille = (int)((Varint)m.Value).Value;
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new Choice(description!, perMille);
+    }
+}
+class Enquete
+{
+    public string Question { get; }
+    public List<Choice> Choices { get; }
+    public EnqueteStatus Status { get; }
+
+    public Enquete(string question, List<Choice> choices, EnqueteStatus status)
+    {
+        Question = question;
+        Choices = choices;
+        Status = status;
+    }
+    public static Enquete Create(byte[] bytes)
+    {
+        string? question = null;
+        var choices = new List<Choice>();
+        EnqueteStatus status = EnqueteStatus.Closed;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1://question
+                    question = Encoding.UTF8.GetString(((LengthDelimited)m.Value).Bytes);
+                    break;
+                case 2://choices
+                    var choice = Choice.Create(((LengthDelimited)m.Value).Bytes);
+                    choices.Add(choice);
+                    break;
+                case 3://status
+                    status = (EnqueteStatus)((Varint)m.Value).Value;
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new Enquete(question!, choices, status);
+    }
+}
+class Statistics
+{
+    public int? Viewers { get; private set; }
+    public int? Comments { get; private set; }
+
+    public int? AdPoints { get; private set; }
+    public int? GiftPoints { get; private set; }
+
+    public Statistics(int? viewers, int? comments, int? adPoints, int? giftPoints)
+    {
+        Viewers = viewers;
+        Comments = comments;
+        AdPoints = adPoints;
+        GiftPoints = giftPoints;
+    }
+    public static Statistics Create(byte[] bytes)
+    {
+        int? viewers = null;
+        int? comments = null;
+        int? ad_points = null;
+        int? gift_points = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    viewers = (int)((Varint)m.Value).Value;
+                    break;
+                case 2:
+                    comments = (int)((Varint)m.Value).Value;
+                    break;
+                case 3:
+                    ad_points = (int)((Varint)m.Value).Value;
+                    break;
+                case 4:
+                    gift_points = (int)((Varint)m.Value).Value;
+                    break;
+                default:
+                    throw new ParseException();
+            }
+        }
+        return new Statistics(viewers, comments, ad_points, gift_points);
     }
 }
 class NicoliveState
 {
-    public ProgramState? State { get; }
-    public NicoliveState(ProgramState? state)
+    public Statistics? Statistics { get; private set; }
+    public ProgramState? State { get; private set; }
+    public Marquee? Marquee { get; private set; }
+    public NicoliveState(Statistics? statistics, ProgramState? state, Marquee? marquee)
     {
+        Statistics = statistics;
         State = state;
+        Marquee = marquee;
     }
 
     public static NicoliveState Create(byte[] bytes)
     {
+        Statistics? statistics = null;
+        Enquete? enquete = null;
+        MoveOrder? moveOrder = null;
         ProgramState? state = null;
-        var a = ProtobufParser.Parse(bytes);
-        switch (a[0].No)
+        Marquee? marquee = null;
+        var ms = ProtobufParser.Parse(bytes);
+        foreach (var m in ms)
         {
-            case 4://marquee
-                {
-                    var b = ProtobufParser.Parse(((LengthDelimited)(a[0].Value)).Bytes);
-                    var c = ProtobufParser.Parse(((LengthDelimited)b[0].Value).Bytes);
-                    foreach (var part in c)
+            switch (m.No)
+            {
+                case 1://statistics
+                    statistics = Statistics.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 2://enquete
+                    enquete = Enquete.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 3://move_order
+                    moveOrder = MoveOrder.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 4://marquee
+                    marquee = Marquee.Create(((LengthDelimited)(m.Value)).Bytes);
+                    break;
+                case 9:
                     {
-                        switch (part.No)
-                        {
-                            case 1://operator_comment
-                                var operatorComment = ProtobufParser.Parse(((LengthDelimited)part.Value).Bytes);
-                                foreach (var opPart in operatorComment)
-                                {
-                                    switch (opPart.No)
-                                    {
-                                        case 1://content
-                                            var content = Encoding.UTF8.GetString(((LengthDelimited)opPart.Value).Bytes);
-                                            break;
-                                        case 2://name
-                                            var name = Encoding.UTF8.GetString(((LengthDelimited)opPart.Value).Bytes);
-                                            break;
-                                        case 3://modifier
-                                            var modifier = Modifier.Create(((LengthDelimited)opPart.Value).Bytes);
-                                            break;
-                                        case 4://link
-                                            var link = Encoding.UTF8.GetString(((LengthDelimited)opPart.Value).Bytes);
-                                            break;
-
-                                    }
-                                }
-                                break;
-                            case 3://duration
-                                var duration = ProtobufParser.Parse(((LengthDelimited)part.Value).Bytes);
-                                var n = (long)((Varint)duration[0].Value).Value;
-                                break;
-                        }
+                        var b = ProtobufParser.Parse(((LengthDelimited)(m.Value)).Bytes);
+                        state = (ProgramState)((Varint)b[0].Value).Value;
                     }
-                }
-                break;
-            case 9:
-                {
-                    var b = ProtobufParser.Parse(((LengthDelimited)(a[0].Value)).Bytes);
-                    state = (ProgramState)((Varint)b[0].Value).Value;
-                }
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    throw new ParseException();
+            }
         }
 
-        return new NicoliveState(state);
+        return new NicoliveState(statistics, state, marquee);
     }
 }
 class Timestamp
@@ -994,5 +1276,47 @@ class Timestamp
         var a0010_val = ((Varint)a001[0].Value).Value;
         var a0011_val = ((Varint)a001[1].Value).Value;
         return new Timestamp((long)a0010_val, (int)a0011_val);
+    }
+}
+class PackedSegment
+{
+    public List<ChunkedMessage> Messages { get; private set; }
+    public string? Next { get; private set; }
+    public string? Snapshot { get; private set; }
+    public PackedSegment(List<ChunkedMessage> messages, string? next, string? snapshot)
+    {
+        Messages = messages;
+        Next = next;
+        Snapshot = snapshot;
+    }
+    public static PackedSegment Create(byte[] bytes)
+    {
+        var ms = ProtobufParser.Parse(bytes);
+        var messages = new List<ChunkedMessage>();
+        string? next = null;
+        string? snapshot = null;
+
+        foreach (var m in ms)
+        {
+            switch (m.No)
+            {
+                case 1:
+                    messages.Add(ChunkedMessage.Create(((LengthDelimited)m.Value).Bytes));
+                    break;
+                case 2:
+                    {
+                        var a = ProtobufParser.Parse(((LengthDelimited)m.Value).Bytes);
+                        next = Encoding.UTF8.GetString(((LengthDelimited)a[0].Value).Bytes);
+                    }
+                    break;
+                case 3:
+                    {
+                        var a = ProtobufParser.Parse(((LengthDelimited)m.Value).Bytes);
+                        snapshot = Encoding.UTF8.GetString(((LengthDelimited)a[0].Value).Bytes);
+                    }
+                    break;
+            }
+        }
+        return new PackedSegment(messages, next, snapshot);
     }
 }

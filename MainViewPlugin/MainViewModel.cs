@@ -1050,7 +1050,7 @@ namespace Mcv.MainViewPlugin
             new TwitchMessageProcessor(),
             new BigoMessageProcessor(),
             new MirrativMessageProcessor(),
-            new NicoLiveMessageProcessor(),
+            new NicoLiveMessageProcessorV2(),
             new MixchMessageProcessor(),
             new OpenrecMessageProcessor(),
             new ShowRoomMessageProcessor(),

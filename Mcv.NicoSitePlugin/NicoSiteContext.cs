@@ -69,7 +69,7 @@ namespace NicoSitePlugin
         }
         public override bool IsValidInput(string input)
         {
-            return Tools.IsLivePageUrl(input) || Tools.IsChannelUrl(input) || Tools.IsCommunityUrl(input);
+            return Tools.IsValidInput(input);
         }
 
         public override UserControl GetCommentPostPanel(ICommentProvider commentProvider)

@@ -33,11 +33,10 @@ namespace NicoSitePlugin
                    { "Origin", "https://live.nicovideo.jp" },
                 {"priority","u=1, i" },
             };
-            var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36";
             var options = new HttpOptions
             {
                 Url = url,
-                UserAgent = userAgent,
+                UserAgent = _userAgent,
                 Headers = headers,
             };
             var message = await GetInternalAsync(options);

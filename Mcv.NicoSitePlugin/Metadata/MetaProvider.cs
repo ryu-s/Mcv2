@@ -8,7 +8,7 @@ namespace NicoSitePlugin.Metadata
     class MetaProvider
     {
         public event EventHandler<IMetaMessage> Received;
-        Websocket _ws;
+        Websocket? _ws;
         private readonly ILogger _logger;
 
         public async Task ReceiveAsync(string websocketUrl)
@@ -27,20 +27,21 @@ namespace NicoSitePlugin.Metadata
             finally
             {
                 _ws.Received -= Ws_Received;
+                _ws.Opened -= Ws_Opened;
                 _ws = null;
             }
         }
 
-        private void Ws_Opened(object sender, EventArgs e)
+        private void Ws_Opened(object? sender, EventArgs e)
         {
             var s = "{\"type\":\"startWatching\",\"data\":{\"stream\":{\"quality\":\"abr\",\"protocol\":\"hls\",\"latency\":\"low\",\"chasePlay\":false},\"room\":{\"protocol\":\"webSocket\",\"commentable\":true},\"reconnect\":false}}";
             try
             {
-                _ws.Send(s);
+                _ws?.Send(s);
             }
             catch (Exception ex)
             {
-
+                _logger.LogException(ex);
             }
         }
         public void Send(IMetaMessage message)
@@ -51,7 +52,7 @@ namespace NicoSitePlugin.Metadata
         {
             _ws?.Send(message);
         }
-        private void Ws_Received(object sender, string e)
+        private void Ws_Received(object? sender, string e)
         {
             var raw = e;
             Debug.WriteLine(raw);

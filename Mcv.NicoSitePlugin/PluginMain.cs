@@ -1,6 +1,8 @@
 ﻿using Mcv.PluginV2;
 using Mcv.PluginV2.Messages;
+using NicoSitePlugin.Metadata;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -48,12 +50,12 @@ namespace NicoSitePlugin.V2
             _commentProvider.MessageReceived -= CommentProvider_MessageReceived;
             _commentProvider.MetadataUpdated -= CommentProvider_MetadataUpdated;
         }
-        private void CommentProvider_MetadataUpdated(object sender, IMetadata e)
+        private void CommentProvider_MetadataUpdated(object? sender, IMetadata e)
         {
             _host.NotifyMetadataUpdated(e);
         }
 
-        private void CommentProvider_MessageReceived(object sender, IMessageContext e)
+        private void CommentProvider_MessageReceived(object? sender, IMessageContext e)
         {
             _host.NotifyMessageReceived(e.Message, e.UserId, e.UsernameItems, e.NewNickname, e.IsInitialComment);
         }
@@ -67,6 +69,70 @@ namespace NicoSitePlugin.V2
             _commentProvider.Disconnect();
         }
     }
+    public interface IConnectionManager
+    {
+        void AddConnection(ConnectionId connId, PluginId pluginId, IPluginHost host);
+        void RemoveConnection(ConnectionId connId);
+        Task ConnectAsync(ConnectionId connId, string input, List<Cookie> cookies);
+        Task DisconnectAsync(ConnectionId connId);
+    }
+
+    class OldConnectionManager : IConnectionManager
+    {
+        private readonly Dictionary<ConnectionId, CommentProviderWrapper> _connDict = [];
+        private readonly Dictionary<ConnectionId, Task> _connectionTaskDict = [];
+        private readonly NicoSiteContext _context;
+        public OldConnectionManager(NicoSiteContext context)
+        {
+            _context = context;
+        }
+        public void AddConnection(ConnectionId connId, PluginId pluginId, IPluginHost host)
+        {
+            var provider = _context.CreateCommentProvider();
+            var wrappter = new CommentProviderWrapper(provider, new CommentProviderHost(host, connId, pluginId));
+            if (_connDict.ContainsKey(connId))
+            {
+                _connDict[connId] = wrappter;
+            }
+            else
+            {
+                _connDict.Add(connId, wrappter);
+            }
+        }
+        public async Task ConnectAsync(ConnectionId connId, string input, List<Cookie> cookies)
+        {
+            if (!_connDict.TryGetValue(connId, out var wrapper))
+            {
+                return;
+            }
+            var connectionTask = wrapper.ConnectAsync(input, cookies);
+            _connectionTaskDict.Add(connId, connectionTask);
+            await Task.CompletedTask;
+        }
+        public async Task DisconnectAsync(ConnectionId connId)
+        {
+            if (!_connDict.TryGetValue(connId, out var wrapper))
+            {
+                return;
+            }
+            wrapper.Disconnect();
+            var connectionTask = _connectionTaskDict[connId];
+            try
+            {
+                await connectionTask;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+
+            }
+            _connectionTaskDict.Remove(connId);
+        }
+        public void RemoveConnection(ConnectionId connId)
+        {
+            _connDict.Remove(connId);
+        }
+    }
     [Export(typeof(IPlugin))]
     public class PluginMain : IPlugin
     {
@@ -74,11 +140,25 @@ namespace NicoSitePlugin.V2
         public PluginId Id { get; } = new PluginId(new Guid("852C766E-B60E-4FA9-92FE-387F310C0124"));
         public string Name { get; } = "NicoSitePlugin";
         public List<string> Roles { get; } = new List<string> { "site:nicolive", "gui" };
-        NicoSiteContext _context;
+        private IConnectionManager? _connectionManager;
+        private readonly ConcurrentDictionary<ConnectionId, Task> _connectionTaskDict = [];
+        //protected virtual async Task<IConnectionManager> CreateConnectionManagerAsync()
+        //{
+        //    var userAgent = await GetUserAgent();
+        //    var context = new NicoSiteContext(new DataSource(userAgent), new Logger(Host));
+        //    var res = await Host.RequestMessageAsync(new RequestLoadPluginOptions(Name)) as ReplyPluginOptions;
+        //    context.LoadOptions(res?.RawOptions ?? "");
+        //    return new OldConnectionManager(context);
+        //}
+        protected virtual async Task<IConnectionManager> CreateConnectionManagerAsync()
+        {
+            await Task.CompletedTask;
+            return new Mcv.NicoSitePlugin.Next20241015.NewConnectionManager(new NewLogger(Host));
+        }
         private async Task<string> GetUserAgent()
         {
             var res = await Host.RequestMessageAsync(new GetUserAgent()) as ReplyUserAgent;
-            return res.UserAgent;
+            return res?.UserAgent ?? "";
         }
         public async Task SetMessageAsync(ISetMessageToPluginV2 message)
         {
@@ -86,10 +166,7 @@ namespace NicoSitePlugin.V2
             {
                 case SetLoading _:
                     {
-                        var userAgent = await GetUserAgent();
-                        _context = new NicoSiteContext(new DataSource(userAgent), new Logger(Host));
-                        var res = await Host.RequestMessageAsync(new RequestLoadPluginOptions(Name)) as ReplyPluginOptions;
-                        _context.LoadOptions(res.RawOptions);
+                        _connectionManager = await CreateConnectionManagerAsync();
                         await Host.SetMessageAsync(new SetPluginHello(Id, Name, Roles));
                     }
                     break;
@@ -103,63 +180,44 @@ namespace NicoSitePlugin.V2
                     break;
                 case SetCreateCommentProvider createCommentProvider:
                     {
-                        var provider = _context.CreateCommentProvider();
-                        var wrappter = new CommentProviderWrapper(provider, new CommentProviderHost(Host, createCommentProvider.ConnId, Id));
-                        if (_connDict.ContainsKey(createCommentProvider.ConnId))
-                        {
-                            _connDict[createCommentProvider.ConnId] = wrappter;
-                        }
-                        else
-                        {
-                            _connDict.Add(createCommentProvider.ConnId, wrappter);
-                        }
+                        _connectionManager?.AddConnection(createCommentProvider.ConnId, Id, Host);
                     }
                     break;
                 case SetDestroyCommentProvider destroyCommentProvider:
                     {
-                        _connDict.Remove(destroyCommentProvider.ConnId);
+                        _connectionManager?.RemoveConnection(destroyCommentProvider.ConnId);
                     }
                     break;
                 case SetConnectSite connect:
                     {
-                        if (!_connDict.TryGetValue(connect.ConnId, out var wrapper))
+                        if (_connectionManager is not null)
                         {
-                            return;
+                            await Task.CompletedTask.ConfigureAwait(false);
+                            var t = _connectionManager.ConnectAsync(connect.ConnId, connect.Input, connect.Cookies);
+                            _connectionTaskDict.TryAdd(connect.ConnId, t);
+                            await Host.SetMessageAsync(new NotifySiteConnected(connect.ConnId)).ConfigureAwait(false);
+
                         }
-                        var connectionTask = wrapper.ConnectAsync(connect.Input, connect.Cookies);
-                        _connectionTaskDict.Add(connect.ConnId, connectionTask);
-                        await Host.SetMessageAsync(new NotifySiteConnected(connect.ConnId));
                     }
                     break;
                 case SetDisconnectSite disconnect:
                     {
-                        if (!_connDict.TryGetValue(disconnect.ConnId, out var wrapper))
+                        if (_connectionManager is not null)
                         {
-                            return;
+                            await _connectionManager.DisconnectAsync(disconnect.ConnId);
+                            var task = _connectionTaskDict[disconnect.ConnId];
+                            await task.ConfigureAwait(false);
+                            await Host.SetMessageAsync(new NotifySiteDisconnected(disconnect.ConnId)).ConfigureAwait(false);
                         }
-                        wrapper.Disconnect();
-                        var connectionTask = _connectionTaskDict[disconnect.ConnId];
-                        try
-                        {
-                            await connectionTask;
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                        _connectionTaskDict.Remove(disconnect.ConnId);
-                        await Host.SetMessageAsync(new NotifySiteDisconnected(disconnect.ConnId));
                     }
                     break;
                 default:
                     break;
             }
         }
-        private readonly Dictionary<ConnectionId, Task> _connectionTaskDict = new();
-        private readonly Dictionary<ConnectionId, CommentProviderWrapper> _connDict = new Dictionary<ConnectionId, CommentProviderWrapper>();
-
         public async Task SetMessageAsync(INotifyMessageV2 message)
         {
+            await Task.CompletedTask;
         }
 
         public async Task<IReplyMessageToPluginV2> RequestMessageAsync(IGetMessageToPluginV2 message)
@@ -167,15 +225,39 @@ namespace NicoSitePlugin.V2
             switch (message)
             {
                 case GetSitePluginDisplayName _:
-                    return new ReplySitePluginDisplayName(_context.DisplayName);
+                    return new ReplySitePluginDisplayName("ニコ生");
                 case GetIsValidSiteUrl isValidUrl:
-                    return new ReplyIsValidSiteUrl(_context.IsValidInput(isValidUrl.Input));
+                    return new ReplyIsValidSiteUrl(Tools.IsValidInput(isValidUrl.Input));
                 case GetSiteDomain _:
                     return new ReplySiteDomain("nicovideo.jp");
                 case GetSettingsPanel _:
-                    return new AnswerSettingsPanel(_context.TabPanel);
+                    return new AnswerSettingsPanel(new TempTagPanel());
             }
             throw new NotImplementedException();
+        }
+        private async Task SetExceptionAsync(Exception exception)
+        {
+            await Host.SetMessageAsync(new SetException(exception, "", ""));
+        }
+    }
+    class TempTagPanel : IOptionsTabPage
+    {
+        public string HeaderText { get; } = "";
+        public System.Windows.Controls.UserControl TabPagePanel { get; } = new();
+
+        public void Apply()
+        {
+        }
+
+        public void Cancel()
+        {
+        }
+    }
+    class NewLogger(IPluginHost host)
+    {
+        public void LogException(Exception ex, string message = "", string detail = "")
+        {
+            host.SetMessageAsync(new SetException(ex, message, detail));
         }
     }
     class Logger : ILogger

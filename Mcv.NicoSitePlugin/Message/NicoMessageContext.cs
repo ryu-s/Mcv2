@@ -1,6 +1,6 @@
 ﻿using Mcv.PluginV2;
 using System.Collections.Generic;
-
+using MessageV2 = Mcv.NicoSitePlugin.MessageV2;
 namespace NicoSitePlugin
 {
     internal class NicoMessageContext : IMessageContext
@@ -11,12 +11,16 @@ namespace NicoSitePlugin
         public string? UserId { get; }
         public IEnumerable<IMessagePart>? UsernameItems { get; }
 
-        public NicoMessageContext(INicoMessage message, string? userId, string? newNickname, bool isInitialComment)
+        public NicoMessageContext(MessageV2.INicoMessage message, string? userId, string? newNickname, bool isInitialComment, string? userName)
         {
             Message = message;
             UserId = userId;
             NewNickname = newNickname;
             IsInitialComment = isInitialComment;
+            if (userName is not null)
+            {
+                UsernameItems = MessagePartFactory.CreateMessageItems(userName);
+            }
         }
     }
 }

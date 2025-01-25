@@ -21,9 +21,6 @@ namespace NicoSitePlugin.Metadata
                     var reason = (string)d.data.reason;
                     ret = new Disconnect(reason);
                     break;
-                case "room":
-                    ret = new Room(raw);
-                    break;
                 case "seat":
                     ret = new Seat(raw);
                     break;

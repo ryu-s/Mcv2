@@ -197,6 +197,8 @@ class DesignTimeMainViewPluginOptions : IMainViewPluginOptions
     public double UserInfoViewWidth { get; set; }
     public double UserInfoViewLeft { get; set; }
     public double UserInfoViewTop { get; set; }
+    public Color NicoLiveSimpleNotificationBackColor { get; set; }
+    public Color NicoLiveSimpleNotificationForeColor { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -1,74 +1,74 @@
 ﻿using Mcv.PluginV2;
-using NicoSitePlugin;
+using Mcv.NicoSitePlugin.MessageV2;
 using System.ComponentModel;
 using System.Windows.Media;
 
 namespace Mcv.MainViewPlugin;
 
-class McvNicoCommentViewModel : CommentViewModelBase, IMcvCommentViewModel, INotifyPropertyChanged
+class McvNicoSimpleNotificationCommentViewModelV2 : CommentViewModelBase, IMcvCommentViewModel, INotifyPropertyChanged
 {
-    public McvNicoCommentViewModel(INicoComment comment, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
-    : base(connName, options, user)
+    public McvNicoSimpleNotificationCommentViewModelV2(INicoSimpleNotification simple, ConnectionName connName, IMainViewPluginOptions options, MyUser? user)
+        : base(connName, options, user)
     {
-        MessageItems = MessagePartFactory.CreateMessageItems(comment.Text);
-        if (IsValudThumbnailUrl(comment.ThumbnailUrl))
-        {
-            Thumbnail = new MessageImage
-            {
-                Url = comment.ThumbnailUrl,
-                Height = 40,
-                Width = 40,
-            };
-        }
-        Id = comment.Id;
-        PostTime = comment.PostedAt.ToLocalTime().ToString("HH:mm:ss");
+        MessageItems = MessagePartFactory.CreateMessageItems(simple.Content);
+        PostTime = simple.DateTime.ToLocalTime().ToString("HH:mm:ss");
+    }
+    protected override SolidColorBrush CreateSiteForeground()
+    {
+        return new SolidColorBrush(_options.NicoLiveForeColor);
     }
 
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoAd ad, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
+    protected override SolidColorBrush CreateSiteBackground()
+    {
+        return new SolidColorBrush(_options.NicoLiveBackColor);
+    }
+    public override SolidColorBrush Background { get => new SolidColorBrush(_options.NicoLiveSimpleNotificationBackColor); }
+    public override SolidColorBrush Foreground { get => new SolidColorBrush(_options.NicoLiveSimpleNotificationForeColor); }
+}
+class McvNicoCommentViewModelV2 : CommentViewModelBase, IMcvCommentViewModel, INotifyPropertyChanged
+{
+    public McvNicoCommentViewModelV2(INicoComment comment, ConnectionName connName, IMainViewPluginOptions options, MyUser? user)
     : base(connName, options, user)
     {
-        //_nameItems = MessagePartFactory.CreateMessageItems(ad.UserName);
-        MessageItems = MessagePartFactory.CreateMessageItems(ad.Text);
-        PostTime = ad.PostedAt.ToString("HH:mm:ss");
-        Info = "広告";
+        MessageItems = MessagePartFactory.CreateMessageItems(comment.Content);
+        _nameItems = MessagePartFactory.CreateMessageItems(comment.UserName);
+        //if (IsValudThumbnailUrl(comment.ThumbnailUrl))
+        //{
+        //    Thumbnail = new MessageImage
+        //    {
+        //        Url = comment.ThumbnailUrl,
+        //        Height = 40,
+        //        Width = 40,
+        //    };
+        //}
+        //Id = comment.Id;
+        PostTime = comment.DateTime.ToLocalTime().ToString("HH:mm:ss");
+        Id = $"{comment.No}";
     }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoGift item, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
+
+    //public McvNicoCommentViewModelV2(INicoAd ad, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
+    //: base(connName, options, user)
+    //{
+    //    //_nameItems = MessagePartFactory.CreateMessageItems(ad.UserName);
+    //    MessageItems = MessagePartFactory.CreateMessageItems(ad);
+    //    PostTime = ad.PostedAt.ToString("HH:mm:ss");
+    //    Info = "広告";
+    //}
+    public McvNicoCommentViewModelV2(INicoGift item, ConnectionName connName, IMainViewPluginOptions options, MyUser? user)
     : base(connName, options, user)
     {
         //_nameItems = MessagePartFactory.CreateMessageItems(item.UserName);
-        MessageItems = MessagePartFactory.CreateMessageItems(item.Text);
-        PostTime = item.PostedAt.ToString("HH:mm:ss");
-        Info = "ギフト";
-    }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoSpi item, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
-    : base(connName, options, user)
-    {
-        //_nameItems = MessagePartFactory.CreateMessageItems(item.UserName);
-        MessageItems = MessagePartFactory.CreateMessageItems(item.Text);
-        PostTime = item.PostedAt.ToString("HH:mm:ss");
-        Info = "リクエスト";
-    }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoEmotion item, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
-    : base(connName, options, user)
-    {
-        //_nameItems = MessagePartFactory.CreateMessageItems(item.UserName);
+        //名無しさんがギフト「応援うさぎもどき（20pt）」を贈りました
         MessageItems = MessagePartFactory.CreateMessageItems(item.Content);
-        PostTime = item.PostedAt.ToString("HH:mm:ss");
-        Info = "エモーション";
+        PostTime = "";// item.PostedAt.ToString("HH:mm:ss");
+        Info = $"ギフト（{item.ItemName}）";
     }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoInfo info, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
-    : base(connName, options, user)
-    {
-        //_nameItems = MessagePartFactory.CreateMessageItems(info.UserName);
-        MessageItems = MessagePartFactory.CreateMessageItems(info.Text);
-        PostTime = info.PostedAt.ToString("HH:mm:ss");
-    }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoConnected connected, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
+    public McvNicoCommentViewModelV2(INicoConnected connected, ConnectionName connName, IMainViewPluginOptions options, MyUser? user)
     : base(connName, options, user)
     {
         MessageItems = Common.MessagePartFactory.CreateMessageItems(connected.Text);
     }
-    public McvNicoCommentViewModel(NicoSitePlugin.INicoDisconnected disconnected, ConnectionName connName, IMainViewPluginOptions options, MyUser user)
+    public McvNicoCommentViewModelV2(INicoDisconnected disconnected, ConnectionName connName, IMainViewPluginOptions options, MyUser? user)
     : base(connName, options, user)
     {
         MessageItems = Common.MessagePartFactory.CreateMessageItems(disconnected.Text);

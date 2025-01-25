@@ -4,6 +4,10 @@ namespace NicoSitePlugin
 {
     static class Tools
     {
+        public static bool IsValidInput(string input)
+        {
+            return IsLivePageUrl(input) || IsChannelUrl(input) || IsCommunityUrl(input) || IsLiveId(input);
+        }
         public static IInput ParseInput(string input)
         {
             if (IsLivePageUrl(input))

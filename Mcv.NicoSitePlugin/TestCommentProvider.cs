@@ -10,7 +10,9 @@ using NicoSitePlugin.Metadata;
 using Mcv.PluginV2;
 using Mcv.NicoSitePlugin.InternalMessage;
 using System.Diagnostics;
-
+using System.IO;
+using MessageV2 = Mcv.NicoSitePlugin.MessageV2;
+using Mcv.NicoSitePlugin.MessageV2;
 namespace NicoSitePlugin
 {
     class TestCommentProvider : CommentProviderBase, INicoCommentProvider, IDisposable
@@ -20,7 +22,7 @@ namespace NicoSitePlugin
         private readonly IDataSource _server;
         private readonly Metadata.MetaProvider _metaProvider;
         CancellationTokenSource _disconnectCts;
-        private DataProps ExtractDataProps(string livePagehtml)
+        private DataProps? ExtractDataProps(string livePagehtml)
         {
             var match = Regex.Match(livePagehtml, "<script [^>]+ data-props=\"([^>]+)\"></script>");
             if (!match.Success) return null;
@@ -69,8 +71,8 @@ reload:
                 _isFirstConnection = false;
                 goto reload;
             }
-            var m = new NicoDisconnected("");
-            var c = new NicoMessageContext(m, null, null, false);
+            var m = new MessageV2.NicoDisconnected();
+            var c = new NicoMessageContext(m, null, null, false, null);
             RaiseMessageReceived(c);
             AfterDisconnected();
         }
@@ -227,226 +229,12 @@ check:
         /// 再接続時は初期コメントが不要だから主にその判別に使うフラグ
         /// </summary>
         private bool _isFirstConnection;
-        private static bool IsAd(Chat.ChatMessage chat)
-        {
-            return chat.Content.StartsWith("/nicoad ");
-        }
-        private static bool IsGift(Chat.ChatMessage chat)
-        {
-            return chat.Content.StartsWith("/gift ");
-        }
-        private static bool IsSpi(Chat.ChatMessage chat)
-        {
-            return chat.Content.StartsWith("/spi ");
-        }
-        private static bool IsEmotion(Chat.ChatMessage chat)
-        {
-            return chat.Content.StartsWith("/emotion ");
-        }
-        private static bool IsInfo(Chat.ChatMessage chat)
-        {
-            return chat.Content.StartsWith("/info ");
-        }
-        private static bool IsDisconnect(Chat.ChatMessage chat)
-        {
-            return chat.Content == "/disconnect";
-        }
-        /// <summary>
-        /// 生IDか
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        private bool IsRawUserId(string userId)
-        {
-            return !string.IsNullOrEmpty(userId) && Regex.IsMatch(userId, "^\\d+$");
-        }
-        private Task<string> GetUserName(string userId)
-        {
-            throw new NotImplementedException();
-        }
-        private const string SystemUserId = "900000000";
-        private static string? GetThumbnail(string userId)
-        {
-            if (long.TryParse(userId, out var userIdNum))
-            {
-                var k = userIdNum / 10000;
-                return $"https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/{k}/{userId}.jpg";
-            }
-            return null;
-        }
-        private async Task ProcessChatMessageAsync(Chat.IChatMessage message)
-        {
-            switch (message)
-            {
-                case Chat.ChatMessage chat:
-                    {
-                        if (_isFirstConnection == false && _isInitialCommentsReceiving == true)
-                        {
-                            //再接続時は初期コメントを無視する
-                            return;
-                        }
-                        var userId = chat.UserId;
-                        string? newNickname = null;
-                        var thumbNailUrl = GetThumbnail(userId);
-                        //var comment = await Tools.CreateNicoComment(chat, user, _siteOptions, roomName, async userid => await API.GetUserInfo(_dataSource, userid), _logger);
-                        INicoMessage comment;
-                        if (IsAd(chat))
-                        {
-                            ///nicoad {"totalAdPoint":215500,"message":"シュガーさんが1700ptニコニ広告しました","version":"1"}
-                            var adJson = chat.Content.Replace("/nicoad", "");
-                            dynamic d = JsonConvert.DeserializeObject(adJson);
-                            if ((string)d.version != "1")
-                            {
-                                throw new ParseException(chat.Raw);
-                            }
-                            var content = (string)d.message;
-                            var ad = new NicoAd(chat.Raw)
-                            {
-                                PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                UserId = userId,
-                                Text = content,
-                            };
-                            comment = ad;
-                        }
-                        else if (IsGift(chat))
-                        {
-                            var match = Regex.Match(chat.Content, "/gift (\\S+) (\\d+|NULL) \"(\\S+)\" (\\d+) \"(\\S*)\" \"(\\S+)\"(?: (\\d+))?");
-                            if (!match.Success)
-                            {
-                                throw new ParseException(chat.Raw);
-                            }
-                            var giftId = match.Groups[1].Value;
-                            var userIdp = match.Groups[2].Value;//ギフトを投げた人。userId == "900000000"
-                            var username = match.Groups[3].Value;
-                            var point = match.Groups[4].Value;
-                            var what = match.Groups[5].Value;
-                            var itemName = match.Groups[6].Value;
-                            var itemCount = match.Groups[7].Value;//アイテムの個数？ギフト貢献n位？
-                            var text = $"{username}さんがギフト「{itemName}（{point}pt）」を贈りました";
-                            var gift = new NicoGift(chat.Raw)
-                            {
-                                Text = text,
-                                PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                UserId = userIdp == "NULL" ? "" : userIdp,
-                                NameItems = MessagePartFactory.CreateMessageItems(username),
-                            };
-                            comment = gift;
-                        }
-                        else if (IsSpi(chat))
-                        {
-                            var spi = new NicoSpi(chat.Raw)
-                            {
-                                Text = chat.Content,
-                                PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                UserId = chat.UserId,
-                            };
-                            comment = spi;
-                        }
-                        else if (IsEmotion(chat))
-                        {
-                            var content = chat.Content.Substring("/emotion ".Length);
-                            var abc = new NicoEmotion("")
-                            {
-                                ChatNo = chat.No,
-                                Anonymity = chat.Anonymity,
-                                PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                Content = content,
-                                UserId = chat.UserId,
-                            };
-                            comment = abc;
-                        }
-                        else if (IsInfo(chat))
-                        {
-                            var match = Regex.Match(chat.Content, "^/info (?<no>\\d+) (?<content>.+)$", RegexOptions.Singleline);
-                            if (!match.Success)
-                            {
-                                throw new ParseException(chat.Raw);
-                            }
-                            else
-                            {
-                                var no = int.Parse(match.Groups["no"].Value);
-                                var content = match.Groups["content"].Value;
-                                var info = new NicoInfo(chat.Raw)
-                                {
-                                    Text = content,
-                                    PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                    UserId = chat.UserId,
-                                    No = no,
-                                };
-                                comment = info;
-                            }
-                        }
-                        else
-                        {
-                            if (IsDisconnect(chat))//NicoCommentではなく専用のクラスを作っても良いかも。
-                            {
-                                _chatProvider?.Disconnect();
-                            }
-                            if (_siteOptions.IsAutoSetNickname)
-                            {
-                                var nick = Utils.ExtractNickname(chat.Content);
-                                if (!string.IsNullOrEmpty(nick))
-                                {
-                                    newNickname = nick;
-                                }
-                            }
-                            var abc = new NicoComment("")
-                            {
-                                ChatNo = chat.No,
-                                Id = chat.No.ToString(),
-                                Is184 = chat.Anonymity == 1,
-                                PostedAt = UnixTimeConverter.FromUnixTime(chat.Date),
-                                Text = chat.Content,
-                                UserId = chat.UserId,
-                                UserName = chat.Name,
-                                ThumbnailUrl = thumbNailUrl,
-                            };
-                            comment = abc;
-                        }
 
-
-                        var context = new NicoMessageContext(comment, userId, newNickname, _isInitialCommentsReceiving);
-                        RaiseMessageReceived(context);
-                    }
-                    break;
-                case Chat.Ping ping:
-                    if (ping.Content == "rs:0")
-                    {
-                        _isInitialCommentsReceiving = true;
-                    }
-                    else if (ping.Content == "rf:0")
-                    {
-                        _isInitialCommentsReceiving = false;
-                    }
-                    break;
-                case Chat.UnknownMessage unknown:
-                    _logger.LogException(new ParseException(unknown.Raw));
-                    break;
-                default:
-                    break;
-            }
-        }
-        private async void ChatProvider_Received(object? sender, Chat.IChatMessage e)
-        {
-            var message = e;
-            try
-            {
-                await ProcessChatMessageAsync(message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogException(ex);
-            }
-
-        }
-
-        readonly List<Task> _tasks = new List<Task>();
-        readonly List<Task> _toAdd = new List<Task>();
+        readonly List<Task> _tasks = [];
+        readonly List<Task> _toAdd = [];
         TaskCompletionSource<object> _mainLooptcs;
-        private readonly Chat.ChatProvider _chatProvider;
         private readonly ChatProvider2 _chatProvider2;
-        Metadata.Room _room;
-        DataProps _dataProps;
+        DataProps? _dataProps;
         private bool _disposedValue;
 
         private void MetaProvider_Received(object? sender, Metadata.IMetaMessage e)
@@ -457,32 +245,6 @@ check:
             {
                 switch (message)
                 {
-                    case Metadata.Room room:
-                        {
-                            _room = room;
-                            Chat.IChatOptions chatOptions;
-                            if (Metadata.Room.IsLoggedIn(room))
-                            {
-                                chatOptions = new Chat.ChatLoggedInOptions
-                                {
-                                    Thread = room.ThreadId,
-                                    ThreadKey = room.YourPostKey,
-                                    UserId = _dataProps.UserId,
-                                };
-                            }
-                            else
-                            {
-                                chatOptions = new Chat.ChatGuestOptions
-                                {
-                                    Thread = room.ThreadId,
-                                    UserId = "guest",
-                                };
-                            }
-                            var t = _chatProvider.ReceiveAsync(chatOptions);
-                            _toAdd.Add(t);
-                            _mainLooptcs.SetResult(null);
-                        }
-                        break;
                     case Metadata.Ping ping:
                         _metaProvider?.Send(new Metadata.Pong());
                         break;
@@ -510,7 +272,7 @@ check:
             }
             catch (Exception ex)
             {
-
+                _logger.LogException(ex);
             }
         }
         DateTime? _vposBaseTime;
@@ -523,7 +285,7 @@ check:
             _isDisconnectedExpected = true;
             _disconnectCts.Cancel();
             _metaProvider?.Disconnect();
-            _chatProvider?.Disconnect();
+            _chatProvider2?.Disconnect();
         }
 
         public override async Task<ICurrentUserInfo> GetCurrentUserInfo(List<Cookie> cookies)
@@ -565,81 +327,52 @@ check:
             _server = server;
             _metaProvider = new Metadata.MetaProvider(_logger);
             _metaProvider.Received += MetaProvider_Received;
-            _chatProvider = new Chat.ChatProvider(_logger);
-            _chatProvider.Received += ChatProvider_Received;
-            _chatProvider2 = new ChatProvider2(server);
+            _chatProvider2 = new ChatProvider2(server, logger);
             _chatProvider2.MessageReceived += ChatProvider2_MessageReceived;
-
         }
-
-        private void ChatProvider2_MessageReceived(object? sender, (Meta Meta, NicoliveMessage Message) e)
+        static DateTime baseTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        static DateTime FromUnixTime(long unixTime)
+        {
+            return baseTime.AddSeconds(unixTime);
+        }
+        private void ChatProvider2_MessageReceived(object? sender, MessageReceivedEventArgs e)
         {
             if (e.Message.Chat is Mcv.NicoSitePlugin.InternalMessage.Chat chat)
             {
-                var comment = new NicoComment("")
+                Debug.WriteLine($"secs={e.Meta.At.Seconds} nanos={e.Meta.At.Nanos} vpos={chat.Vpos} content={chat.Content}");
+                var comment = new MessageV2.NicoComment
                 {
-                    ChatNo = chat.No,
+                    Content = chat.Content,
+                    No = chat.No,
+                    UserId = chat.RawUserId?.ToString() ?? chat.HashedUserId ?? "",
                     UserName = chat.Name,
-                    Text = chat.Content,
-                    UserId = chat.HashedUserId ?? "",
+                    Vpos = chat.Vpos,
+                    DateTime = FromUnixTime(e.Meta.At.Seconds),
                 };
-                var context = new NicoMessageContext(comment, chat.HashedUserId, null, false);
+                var context = new NicoMessageContext(comment, chat.HashedUserId, null, e.IsInitialComment, chat.Name);
                 RaiseMessageReceived(context);
             }
             else if (e.Message.Gift is Mcv.NicoSitePlugin.InternalMessage.Gift gift)
             {
-                var userId = gift.AdvertiserUserId?.ToString();
-                RaiseMessageReceived(new NicoMessageContext(new NicoGift("")
+                RaiseMessageReceived(new NicoMessageContext(new MessageV2.NicoGift()
                 {
-                    ChatNo = null,
-                    ItemCount = 1,
+                    ItemId = gift.ItemId,
+                    UserName = gift.AdvertiserName,
+                    Message = gift.Message,
+                    UserId = gift.AdvertiserUserId,
                     ItemName = gift.ItemName,
-                    UserId = userId,
-                    NameItems = MessagePartFactory.CreateMessageItems(gift.AdvertiserName),
-                }, userId, null, false));
+                    Content = gift.Content,
+                    DateTime = FromUnixTime(e.Meta.At.Seconds),
+                }, gift.AdvertiserUserId?.ToString(), null, false, gift.AdvertiserName));
             }
             else if (e.Message.Nicoad is Mcv.NicoSitePlugin.InternalMessage.Nicoad ad)
             {
-
+                var _dateTime = FromUnixTime(e.Meta.At.Seconds);
             }
             else if (e.Message.SimpleNotification is Mcv.NicoSitePlugin.InternalMessage.SimpleNotification sim)
             {
-                if (sim.Cruise is string cruise)
-                {
-
-                }
-                else if (sim.Emotion is string emotion)
-                {
-
-                }
-                else if (sim.Ichiba is string ichiba)
-                {
-
-                }
-                else if (sim.ProgramExtended is string extended)
-                {
-
-                }
-                else if (sim.Quote is string quote)
-                {
-
-                }
-                else if (sim.RankingIn is string rankingin)
-                {
-
-                }
-                else if (sim.RankingUpdated is string rankingupdated)
-                {
-
-                }
-                else if (sim.Visited is string visited)
-                {
-
-                }
-                else
-                {
-                    //仕様変更への対応漏れ
-                }
+                RaiseMessageReceived(new NicoMessageContext(new NicoSimpleNotification(sim, FromUnixTime(e.Meta.At.Seconds)),
+                    null, null, false, null));
             }
         }
 
@@ -651,7 +384,6 @@ check:
                 {
                     // TODO: dispose managed state (managed objects)
                     _metaProvider.Received -= MetaProvider_Received;
-                    _chatProvider.Received -= ChatProvider_Received;
                     _chatProvider2.MessageReceived -= ChatProvider2_MessageReceived;
                 }
 
@@ -675,50 +407,87 @@ check:
             GC.SuppressFinalize(this);
         }
     }
+    class MessageReceivedEventArgs(Mcv.NicoSitePlugin.InternalMessage.Meta meta, Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage message, bool isInitialComment) : EventArgs
+    {
+        public Mcv.NicoSitePlugin.InternalMessage.Meta Meta { get; } = meta;
+        public Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage Message { get; } = message;
+        public bool IsInitialComment { get; } = isInitialComment;
+    }
     class ChatProvider2
     {
         private readonly IDataSource _server;
-        public event EventHandler<Mcv.NicoSitePlugin.InternalMessage.Chat>? ChatReceived;
-        public event EventHandler<(Mcv.NicoSitePlugin.InternalMessage.Meta Meta, Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage Message)>? MessageReceived;
-        public ChatProvider2(IDataSource server)
+        public event EventHandler<MessageReceivedEventArgs>? MessageReceived;
+        CancellationTokenSource? _cts;
+        private readonly ILogger _logger;
+        public ChatProvider2(IDataSource server, ILogger logger)
         {
             _server = server;
+            _logger = logger;
         }
-        bool _isFirst = true;
         internal async Task ReceiveAsync(string uri)
         {
+            if (_cts is not null)
+            {
+                throw new InvalidOperationException("既にReceiveAsync()が呼ばれている");
+            }
+            _cts = new CancellationTokenSource();
+
             var urlz = uri + "?at=now";
             var isLiveEnded = false;
-            while (!isLiveEnded)
+            var isBackWardReceived = false;//BackwardSegmentは一番最初に送られてくるとは限らない。
+            while (!isLiveEnded && _cts is not null && !_cts.IsCancellationRequested)
             {
                 Debug.WriteLine("取得中");
-                var k = await _server.GetBytesAsync(urlz);
-                Debug.WriteLine("取得完了");
-                var entries = ChunkedEntry.Create(k);
+                List<ChunkedEntry> entries;
+                byte[]? rawChunkedEntry = null;
+                try
+                {
+                    rawChunkedEntry = await _server.GetBytesAsync(urlz);
+                    Debug.WriteLine("取得完了");
+                    entries = ChunkedEntry.Create(rawChunkedEntry);
+                }
+                catch (Exception ex)
+                {
+                    if (rawChunkedEntry is not null)
+                    {
+                        _logger.LogException(ex, "", $"data:{ToHex(rawChunkedEntry)}");
+                    }
+                    else
+                    {
+                        _logger.LogException(ex);
+                    }
+                    continue;
+                }
 
                 foreach (var entry in entries)
                 {
-                    if (entry.Backward is BackwardSegment backward)
+                    if (entry.Backward is BackwardSegment backward && !isBackWardReceived)
                     {
-                        ////以下のコードだとChunkedMessageのデコードでエラーになった。
-                        //var gg0 = await _server.GetBytesAsync(backward.Segment);
-                        //var a = ProtobufParser.Parse(gg0);
-                        //var list = new List<ChunkedMessage>();
-                        //foreach (var b in a)
-                        //{
-                        //    var chunkedMessage = ChunkedMessage.Create(((LengthDelimited)b.Value).Bytes);
-                        //    list.Add(chunkedMessage);
-                        //}
-                        //var gg1 = await _server.GetBytesAsync(backward.Snapshot);
+                        var bytes = await _server.GetBytesAsync(backward.Segment);
+                        var a = PackedSegment.Create(bytes);
+                        foreach (var m in a.Messages)
+                        {
+                            if (m.Message is NicoliveMessage message)
+                            {
+                                MessageReceived?.Invoke(this, new MessageReceivedEventArgs(m.Meta, message, true));
+                            }
+                        }
+                        isBackWardReceived = true;
                     }
                 }
                 foreach (var entry in entries)
                 {
                     if (entry.Previous is MessageSegment previous)
                     {
-                        //Debug.WriteLine($"previous={previous.Uri} from={previous.From} until={previous.Until}");
-                        //var gg = await _server.GetBytesAsync(previous.Uri);
-                        //var tt1 = ChunkedEntry.SplitData(gg);
+                        var bytes = await _server.GetBytesAsync(previous.Uri);
+                        var ms = ChunkedMessage.Create2(bytes);
+                        foreach (var m in ms)
+                        {
+                            if (m.Message is NicoliveMessage message)
+                            {
+                                MessageReceived?.Invoke(this, new MessageReceivedEventArgs(m.Meta, message, false));
+                            }
+                        }
                     }
 
                 }
@@ -726,13 +495,30 @@ check:
                 {
                     if (entry.Segment is MessageSegment segment)
                     {
-                        var gg = await _server.GetBytesAsync(segment.Uri);
-                        var ns = ChunkedMessage.Create2(gg);
+                        List<ChunkedMessage> ns;
+                        byte[]? rawChunkedMessage = null;
+                        try
+                        {
+                            rawChunkedMessage = await _server.GetBytesAsync(segment.Uri);
+                            ns = ChunkedMessage.Create2(rawChunkedMessage);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (rawChunkedMessage is not null)
+                            {
+                                _logger.LogException(ex, "", $"data:{ToHex(rawChunkedMessage)}");
+                            }
+                            else
+                            {
+                                _logger.LogException(ex);
+                            }
+                            continue;
+                        }
                         foreach (var n in ns)
                         {
                             if (n.Message is Mcv.NicoSitePlugin.InternalMessage.NicoliveMessage message)
                             {
-                                MessageReceived?.Invoke(this, (n.Meta, message));
+                                MessageReceived?.Invoke(this, new MessageReceivedEventArgs(n.Meta, message, false));
                             }
                             else if (n.Signal is Signal.Flushed)
                             {
@@ -765,6 +551,14 @@ check:
                 }
             }
             Debug.WriteLine("ChatProvider.ReceiveAsync() finished");
+        }
+        public void Disconnect()
+        {
+            _cts?.Cancel();
+        }
+        private static string ToHex(byte[] bytes)
+        {
+            return "0x" + BitConverter.ToString(bytes).Replace("-", ",0x");
         }
     }
 }

@@ -189,6 +189,9 @@ namespace Mcv.MainViewPlugin
         Color BigoBackColor { get; set; }
         Color BigoForeColor { get; set; }
 
+        Color NicoLiveSimpleNotificationBackColor { get; set; }
+        Color NicoLiveSimpleNotificationForeColor { get; set; }
+
         InfoType ShowingInfoLevel { get; set; }
 
         int ConnectionsViewSelectionDisplayIndex { get; set; }
