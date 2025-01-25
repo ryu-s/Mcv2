@@ -104,7 +104,7 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
         }
     }
     protected abstract SolidColorBrush CreateSiteForeground();
-    public SolidColorBrush Foreground
+    public virtual SolidColorBrush Foreground
     {
         get
         {
@@ -127,7 +127,7 @@ abstract class CommentViewModelBase : ViewModelBase, IMcvCommentViewModel
         }
     }
     protected abstract SolidColorBrush CreateSiteBackground();
-    public SolidColorBrush Background
+    public virtual SolidColorBrush Background
     {
         get
         {

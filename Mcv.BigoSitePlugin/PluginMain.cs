@@ -47,12 +47,12 @@ namespace BigoSitePlugin.V2
             _commentProvider.MessageReceived -= CommentProvider_MessageReceived;
             _commentProvider.MetadataUpdated -= CommentProvider_MetadataUpdated;
         }
-        private async void CommentProvider_MetadataUpdated(object sender, IMetadata e)
+        private async void CommentProvider_MetadataUpdated(object? sender, IMetadata e)
         {
             await _host.NotifyMetadataUpdated(e);
         }
 
-        private void CommentProvider_MessageReceived(object sender, IMessageContext e)
+        private void CommentProvider_MessageReceived(object? sender, IMessageContext e)
         {
             _host.NotifyMessageReceived(e.Message, e.UserId, e.UsernameItems, e.NewNickname, e.IsInitialComment);
         }

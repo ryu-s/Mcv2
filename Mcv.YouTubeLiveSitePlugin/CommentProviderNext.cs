@@ -274,7 +274,7 @@ namespace Mcv.YouTubeLiveSitePlugin
             var watchYtInitialDataRaw = ExtractRawWatchYtInitialData(watchHtml);
             try
             {
-                dynamic d = JsonConvert.DeserializeObject(watchYtInitialDataRaw);
+                dynamic? d = JsonConvert.DeserializeObject(watchYtInitialDataRaw);
                 var isLive = d.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.viewCount.videoViewCountRenderer.isLive;
                 return isLive ?? false;
             }

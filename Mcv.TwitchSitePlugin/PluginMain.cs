@@ -48,12 +48,12 @@ namespace TwitchSitePlugin.V2
             _commentProvider.MessageReceived -= CommentProvider_MessageReceived;
             _commentProvider.MetadataUpdated -= CommentProvider_MetadataUpdated;
         }
-        private void CommentProvider_MetadataUpdated(object sender, IMetadata e)
+        private void CommentProvider_MetadataUpdated(object? sender, IMetadata e)
         {
             _host.NotifyMetadataUpdated(e);
         }
 
-        private void CommentProvider_MessageReceived(object sender, IMessageContext e)
+        private void CommentProvider_MessageReceived(object? sender, IMessageContext e)
         {
             _host.NotifyMessageReceived(e.Message, e.UserId, e.UsernameItems, e.NewNickname, e.IsInitialComment);
         }

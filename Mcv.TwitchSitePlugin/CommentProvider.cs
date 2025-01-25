@@ -46,8 +46,8 @@ namespace TwitchSitePlugin
     }
     class CurrentUserInfo : ICurrentUserInfo
     {
-        public string Username { get; set; }
-        public string UserId { get; set; }
+        public string Username { get; set; } = "";
+        public string? UserId { get; set; }
         public bool IsLoggedIn { get; set; }
     }
     class TwitchCommentProvider : ICommentProvider
@@ -114,9 +114,10 @@ namespace TwitchSitePlugin
         {
             return new MetadataProvider(_server, _siteOptions, channelName);
         }
-        public async Task Init()
+        public async Task InitAsync()
         {
             _commentCounter = new CommentCounter();
+            await Task.CompletedTask;
         }
         CommentCounter _commentCounter;
         public async Task ConnectAsync(string input, List<Cookie> cookies)
@@ -149,7 +150,7 @@ namespace TwitchSitePlugin
                     }
                 }
 
-                await Init();
+                await InitAsync();
 
                 _provider = CreateMessageProvider();
                 _provider.Opened += Provider_Opened;
@@ -212,7 +213,7 @@ namespace TwitchSitePlugin
         }
         DateTime? _startedAt;
         System.Timers.Timer _elapsedTimer;
-        private void MetaProvider_MetadataUpdated(object sender, Stream e)
+        private void MetaProvider_MetadataUpdated(object? sender, Stream e)
         {
             var stream = e;
             Debug.Assert(stream != null);
@@ -237,7 +238,7 @@ namespace TwitchSitePlugin
         string _oauthToken;
         string _name;
         UserState _userState;
-        private async void Provider_Received(object sender, string e)
+        private async void Provider_Received(object? sender, string e)
         {
             var raw = e;
             await ProcessMessage(raw);
@@ -377,7 +378,7 @@ namespace TwitchSitePlugin
         {
             return Tools.GetRandomGuestUsername();
         }
-        private async void Provider_Opened(object sender, EventArgs e)
+        private async void Provider_Opened(object? sender, EventArgs e)
         {
             try
             {
@@ -447,7 +448,7 @@ namespace TwitchSitePlugin
         {
             return DateTime.Now;
         }
-        private void ElapsedTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private void ElapsedTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             if (!_startedAt.HasValue) return;
 
@@ -473,8 +474,8 @@ namespace TwitchSitePlugin
         public Task<ICurrentUserInfo> GetCurrentUserInfo(List<Cookie> cookies)
         {
             var info = new CurrentUserInfo();
-            string name = null;
-            string displayName = null;
+            string? name = null;
+            string? displayName = null;
             foreach (var cookie in cookies)
             {
                 switch (cookie.Name)
@@ -496,7 +497,7 @@ namespace TwitchSitePlugin
 
                 }
             }
-            info.Username = displayName ?? name;
+            info.Username = displayName ?? name ?? "";
             info.IsLoggedIn = !string.IsNullOrEmpty(name);
             return Task.FromResult<ICurrentUserInfo>(info);
         }
@@ -510,7 +511,7 @@ namespace TwitchSitePlugin
             if (!_isInitialized)
             {
                 _isInitialized = true;
-                await Init();
+                await InitAsync();
             }
             await ProcessMessage(raw);
         }
