@@ -9,6 +9,7 @@ public interface ICommentProvider
     event EventHandler<IMessageContext> MessageReceived;
     event EventHandler<IMetadata> MetadataUpdated;
     Task ConnectAsync(string input, List<Cookie> cookies);
+    [Obsolete]
     void SetMessage(string raw);
     void Disconnect();
     bool CanConnect { get; }
