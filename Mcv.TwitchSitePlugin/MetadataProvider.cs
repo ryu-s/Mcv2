@@ -36,14 +36,7 @@ namespace TwitchSitePlugin
                 //{
                 //    MetadataUpdated?.Invoke(this, liveInfo);
                 //}
-                try
-                {
-                    await Task.Delay(_pollingIntervalSec * 1000, _cts.Token);
-                }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
+                await Task.Delay(_pollingIntervalSec * 1000, _cts.Token).ContinueWith(t => { });
             }
         }
         const int _pollingIntervalSec = 30;
