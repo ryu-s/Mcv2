@@ -164,6 +164,7 @@ namespace TwitchSitePlugin
                 tasks.Add(messageProviderTask);
                 tasks.Add(metaProviderTask);
 
+                RaiseConnected();
 
                 while (tasks.Count > 0)
                 {
@@ -209,10 +210,22 @@ namespace TwitchSitePlugin
             {
                 CanConnect = true;
                 CanDisconnect = false;
+                RaiseDisconnected();
             }
         }
         DateTime? _startedAt;
         System.Timers.Timer _elapsedTimer;
+        private void RaiseConnected()
+        {
+            var messageContext = new TwitchMessageContext(new TwitchConnected(""), null, null, null, false);
+            MessageReceived?.Invoke(this, messageContext);
+            //Connected?.Invoke(this, new ConnectedEventArgs { IsInputStoringNeeded = true, UrlToRestore = _channelName });
+        }
+        private void RaiseDisconnected()
+        {
+            var messageContext = new TwitchMessageContext(new TwitchDisconnected(""), null, null, null, false);
+            MessageReceived?.Invoke(this, messageContext);
+        }
         private void MetaProvider_MetadataUpdated(object? sender, Stream e)
         {
             var stream = e;
