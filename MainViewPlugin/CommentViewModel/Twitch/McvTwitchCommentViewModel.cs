@@ -10,8 +10,14 @@ class McvTwitchCommentViewModel : CommentViewModelBase, IMcvCommentViewModel, IN
         : base(connName, options, user)
     {
         _message = comment;
-
-        _nameItems = Common.MessagePartFactory.CreateMessageItems(comment.UserName);
+        if (comment.DisplayName == comment.UserName)
+        {
+            _nameItems = Common.MessagePartFactory.CreateMessageItems(comment.DisplayName);
+        }
+        else
+        {
+            _nameItems = Common.MessagePartFactory.CreateMessageItems($"{comment.DisplayName} ({comment.UserName})");
+        }
         MessageItems = comment.CommentItems;
         Thumbnail = comment.UserIcon;
         Id = comment.Id.ToString();
