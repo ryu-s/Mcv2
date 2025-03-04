@@ -11,6 +11,7 @@ namespace TwitchSitePlugin
         Connected,
         Disconnected,
         Notice,
+        UserNotice,
     }
 
 
@@ -41,6 +42,11 @@ namespace TwitchSitePlugin
     }
     public interface ITwitchNotice : ITwitchMessage
     {
+        string Message { get; }
+    }
+    public interface ITwitchUserNotice : ITwitchMessage
+    {
+        string MsgId { get; }
         string Message { get; }
     }
     //public interface ITwitchItem : ITwitchMessage

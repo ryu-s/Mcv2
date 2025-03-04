@@ -237,6 +237,7 @@ namespace TwitchSitePlugin
     {
         Task<string> GetAsync(string url, Dictionary<string, string> headers);
         Task<string> GetAsync(string url, Dictionary<string, string> headers, CookieContainer cc);
+        Task<string> PostAsync(string url, Dictionary<string, string> headers, string data, CookieContainer cc);
     }
     public class TwitchServer : ServerBase, IDataServer
     {
@@ -269,6 +270,20 @@ namespace TwitchSitePlugin
                 var resBody = await result.Content.ReadAsStringAsync();
                 return resBody;
             }
+        }
+        public async Task<string> PostAsync(string url, Dictionary<string, string> headers, string data, CookieContainer cc)
+        {
+            var content = new StringContent(data);
+            using var handler = new HttpClientHandler { UseCookies = true, CookieContainer = cc };
+            using var client = new HttpClient(handler);
+
+            foreach (var header in headers)
+            {
+                client.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
+            var result = await client.PostAsync(url, content);
+            var resBody = await result.Content.ReadAsStringAsync();
+            return resBody;
         }
     }
 }

@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Mcv.PluginV2;
+using InternalMessages = TwitchSitePlugin.V2.InternalMessages;
+using TwitchSitePlugin.V2.InternalMessages;
 
 namespace TwitchSitePlugin
 {
@@ -24,7 +26,7 @@ namespace TwitchSitePlugin
     {
         public Dictionary<string, string> Tags { get; }
         public List<string> Params { get; }
-        public UserState(Dictionary<string, string> tags, List<string> @params)
+        private UserState(Dictionary<string, string> tags, List<string> @params)
         {
             Tags = tags;
             Params = @params;
@@ -42,6 +44,25 @@ namespace TwitchSitePlugin
                     Tags.Add(key, newTags[key]);
                 }
             }
+        }
+        public void UpdateTags(InternalMessages.UserState userState)
+        {
+            //foreach (var key in newTags.Keys)
+            //{
+            //    if (Tags.ContainsKey(key))
+            //    {
+            //        Tags[key] = newTags[key];
+            //    }
+            //    else
+            //    {
+            //        Tags.Add(key, newTags[key]);
+            //    }
+            //}
+        }
+
+        internal static UserState Parse(GlobalUserState globalUserState)
+        {
+            return new UserState(globalUserState.Tags, globalUserState.Params);
         }
     }
     class CurrentUserInfo : ICurrentUserInfo
@@ -244,10 +265,6 @@ namespace TwitchSitePlugin
         }
 
         private readonly ConcurrentDictionary<string, int> _userCommentCountDict = new ConcurrentDictionary<string, int>();
-        protected virtual ICommentData ParsePrivMsg(Result result)
-        {
-            return Tools.ParsePrivMsg(result);
-        }
         string _oauthToken;
         string _name;
         UserState _userState;
@@ -256,101 +273,171 @@ namespace TwitchSitePlugin
             var raw = e;
             await ProcessMessage(raw);
         }
-
         private async Task ProcessMessage(string raw)
         {
+            //using (var sw = new System.IO.StreamWriter($"comments.txt", true))
+            //{
+            //    sw.WriteLine(raw);
+            //}
             Debug.WriteLine(raw);
-            var result = Tools.Parse(raw);
-            try
+            var internalMessage = InternalMessages.Parser.Parse(Tools.Parse(raw));
+            switch (internalMessage)
             {
-                switch (result.Command)
-                {
-                    case "CLEARCHAT":
-                        //"@ban-duration=10;room-id=37402112;target-msg-id=4830aaeb-1610-47b1-911e-9da2637816c5;target-user-id=87037096;tmi-sent-ts=1567069654595 :tmi.twitch.tv CLEARCHAT #shroud :derzackenausderkrone"
-                        break;
-                    case "CLEARMSG":
-                        //"@login=kale9222;room-id=;target-msg-id=759454c4-d09f-4fed-a8d6-3a20335995ec;tmi-sent-ts=1567075260054 :tmi.twitch.tv CLEARMSG #shroud :stop playing this game man :D"
-                        break;
-                    case "PING":
-                        await _provider.SendAsync("PONG");
-                        break;
-                    case "GLOBALUSERSTATE":
-                        _userState = new UserState(result.Tags, result.Params);
-                        break;
-                    case "HOSTTARGET":
-                        //:tmi.twitch.tv HOSTTARGET #evo6 :evo 4922
-                        break;
-                    case "USERSTATE":
-                        _userState.UpdateTags(result.Tags);
-                        break;
-                    case "USERNOTICE":
-                        //"@badge-info=subscriber/11;badges=subscriber/6,bits/100;color=#FF00FF;display-name=Kosnes;emotes=205480:0-10;flags=;id=b0dbd1a7-86fe-4f54-9d4b-1cdd47a49628;login=kosnes;mod=0;msg-id=resub;msg-param-cumulative-months=11;msg-param-months=0;msg-param-should-share-streak=1;msg-param-streak-months=11;msg-param-sub-plan-name=Channel\\sSubscription\\s(meclipse);msg-param-sub-plan=Prime;room-id=37402112;subscriber=1;system-msg=Kosnes\\ssubscribed\\swith\\sTwitch\\sPrime.\\sThey've\\ssubscribed\\sfor\\s11\\smonths,\\scurrently\\son\\sa\\s11\\smonth\\sstreak!;tmi-sent-ts=1567069704460;user-id=42814323;user-type= :tmi.twitch.tv USERNOTICE #shroud :shroud4Head"
-                        break;
-                    case "ROOMSTATE":
-                        //"@emote-only=0;followers-only=10;r9k=0;rituals=0;room-id=37402112;slow=5;subs-only=0 :tmi.twitch.tv ROOMSTATE #shroud"
-                        break;
-                    case "PRIVMSG":
-                        {
-                            //useridが含まれていないPRIVMSGを確認。ホスティングされたことを伝える運営コメント
-                            //:jtv!jtv@jtv.tmi.twitch.tv PRIVMSG 3lis_game :GamesFan34260 is now hosting you.
+                case InternalMessages.Ping ping:
+                    await _provider.SendAsync("PONG");
+                    break;
+                case InternalMessages.PrivMsg privMsg:
+                    {
+                        var comment = OnPrivMsg(privMsg);
+                        //var comment = OnPrivMsg(result);
+                        var messageContext = new TwitchMessageContext(comment, comment.UserId, MessagePartFactory.CreateMessageItems(comment.UserName), null, false);
+                        MessageReceived?.Invoke(this, messageContext);
+                    }
+                    break;
+                case InternalMessages.Notice notice:
+                    OnNoticeReceived(notice);
+                    break;
+                case InternalMessages.GlobalUserState globalUserState:
+                    _userState = UserState.Parse(globalUserState);
+                    break;
+                case InternalMessages.UserState userState:
+                    _userState.UpdateTags(userState);
+                    //_userState.UpdateTags(result.Tags);
+                    break;
+                case InternalMessages.UserNotice userNotice:
+                    {
+                        var c = new TwitchUserNotice(userNotice);
+                        var usernameItems = MessagePartFactory.CreateMessageItems("");
+                        var messageContext = new TwitchMessageContext(c, userNotice.UserId, usernameItems, null, false);
+                        MessageReceived?.Invoke(this, messageContext);
+                    }
+                    break;
+                case InternalMessages.RoomState roomState:
+                    break;
+                case InternalMessages.UnknownMessage unknownMessage:
+                    SendSystemInfo(unknownMessage.Raw, InfoType.Debug);
+                    _logger.LogException(new ParseException(unknownMessage.Raw));
+                    break;
+                case IgnoredMessage _:
+                    break;
+                default:
+                    break;
+            }
+            //try
+            //{
+            //    switch (result.Command)
+            //    {
+            //        case "CLEARCHAT":
+            //            //"@ban-duration=10;room-id=37402112;target-msg-id=4830aaeb-1610-47b1-911e-9da2637816c5;target-user-id=87037096;tmi-sent-ts=1567069654595 :tmi.twitch.tv CLEARCHAT #shroud :derzackenausderkrone"
+            //            break;
+            //        case "CLEARMSG":
+            //            //"@login=kale9222;room-id=;target-msg-id=759454c4-d09f-4fed-a8d6-3a20335995ec;tmi-sent-ts=1567075260054 :tmi.twitch.tv CLEARMSG #shroud :stop playing this game man :D"
+            //            break;
+            //        case "PING":
+            //            await _provider.SendAsync("PONG");
+            //            break;
+            //        case "GLOBALUSERSTATE":
+            //            _userState = new UserState(result.Tags, result.Params);
+            //            break;
+            //        case "HOSTTARGET":
+            //            //:tmi.twitch.tv HOSTTARGET #evo6 :evo 4922
+            //            break;
+            //        case "USERSTATE":
+            //            _userState.UpdateTags(result.Tags);
+            //            break;
+            //        case "USERNOTICE":
+            //            //"@badge-info=subscriber/11;badges=subscriber/6,bits/100;color=#FF00FF;display-name=Kosnes;emotes=205480:0-10;flags=;id=b0dbd1a7-86fe-4f54-9d4b-1cdd47a49628;login=kosnes;mod=0;msg-id=resub;msg-param-cumulative-months=11;msg-param-months=0;msg-param-should-share-streak=1;msg-param-streak-months=11;msg-param-sub-plan-name=Channel\\sSubscription\\s(meclipse);msg-param-sub-plan=Prime;room-id=37402112;subscriber=1;system-msg=Kosnes\\ssubscribed\\swith\\sTwitch\\sPrime.\\sThey've\\ssubscribed\\sfor\\s11\\smonths,\\scurrently\\son\\sa\\s11\\smonth\\sstreak!;tmi-sent-ts=1567069704460;user-id=42814323;user-type= :tmi.twitch.tv USERNOTICE #shroud :shroud4Head"
+            //            break;
+            //        case "ROOMSTATE":
+            //            //"@emote-only=0;followers-only=10;r9k=0;rituals=0;room-id=37402112;slow=5;subs-only=0 :tmi.twitch.tv ROOMSTATE #shroud"
+            //            break;
+            //        case "PRIVMSG":
+            //            {
+            //                //useridが含まれていないPRIVMSGを確認。ホスティングされたことを伝える運営コメント
+            //                //:jtv!jtv@jtv.tmi.twitch.tv PRIVMSG 3lis_game :GamesFan34260 is now hosting you.
 
-                            OnMessageReceived(result);
-                            //var cvm = new TwitchCommentViewModel(_options, _siteOptions, commentData, isFirstComment, this, user);
-                            //CommentReceived?.Invoke(this, cvm);
-                        }
-                        break;
-                    case "NOTICE":
-                        //@msg-id=msg_channel_suspended :tmi.twitch.tv NOTICE #videos :This channel has been suspended.
-                        //@msg-id=msg_requires_verified_phone_number :tmi.twitch.tv NOTICE #ksonsouchou :A verified phone number is required to chat in this channel. Please visit https://www.twitch.tv/settings/security to verify your phone number.
-                        OnNoticeReceived(result);
-                        break;
-                    case "CAP":
-                        break;
-                    case "JOIN":
-                        //":kv501k!kv501k@kv501k.tmi.twitch.tv JOIN #shroud"
-                        break;
-                    case "001":
-                        //":tmi.twitch.tv 001 kv501k :Welcome, GLHF!"
-                        break;
-                    case "002":
-                        //":tmi.twitch.tv 001 kv501k :Welcome, GLHF!"
-                        break;
-                    case "003":
-                        //":tmi.twitch.tv 003 kv501k :This server is rather new"
-                        break;
-                    case "004":
-                        //":tmi.twitch.tv 004 kv501k :-"
-                        break;
-                    case "353":
-                        //":kv501k.tmi.twitch.tv 353 kv501k = #shroud :kv501k"
-                        break;
-                    case "366":
-                        //":kv501k.tmi.twitch.tv 366 kv501k #shroud :End of /NAMES list"
-                        break;
-                    case "372":
-                        //":tmi.twitch.tv 372 kv501k :You are in a maze of twisty passages, all alike."
-                        break;
-                    case "375":
-                        //":tmi.twitch.tv 375 kv501k :-"
-                        break;
-                    case "376":
-                        //":tmi.twitch.tv 376 kv501k :>"
-                        break;
-                    default:
-                        Debug.WriteLine($"Twitch unknown command={result.Command}");
-                        SendSystemInfo(result.Raw, InfoType.Debug);
-                        throw new ParseException(result.Raw);
+            //                OnMessageReceived(result);
+            //                //var cvm = new TwitchCommentViewModel(_options, _siteOptions, commentData, isFirstComment, this, user);
+            //                //CommentReceived?.Invoke(this, cvm);
+            //            }
+            //            break;
+            //        case "NOTICE":
+            //            //@msg-id=msg_channel_suspended :tmi.twitch.tv NOTICE #videos :This channel has been suspended.
+            //            //@msg-id=msg_requires_verified_phone_number :tmi.twitch.tv NOTICE #ksonsouchou :A verified phone number is required to chat in this channel. Please visit https://www.twitch.tv/settings/security to verify your phone number.
+            //            OnNoticeReceived(result);
+            //            break;
+            //        case "CAP":
+            //            break;
+            //        case "JOIN":
+            //            //":kv501k!kv501k@kv501k.tmi.twitch.tv JOIN #shroud"
+            //            break;
+            //        case "001":
+            //            //":tmi.twitch.tv 001 kv501k :Welcome, GLHF!"
+            //            break;
+            //        case "002":
+            //            //":tmi.twitch.tv 001 kv501k :Welcome, GLHF!"
+            //            break;
+            //        case "003":
+            //            //":tmi.twitch.tv 003 kv501k :This server is rather new"
+            //            break;
+            //        case "004":
+            //            //":tmi.twitch.tv 004 kv501k :-"
+            //            break;
+            //        case "353":
+            //            //":kv501k.tmi.twitch.tv 353 kv501k = #shroud :kv501k"
+            //            break;
+            //        case "366":
+            //            //":kv501k.tmi.twitch.tv 366 kv501k #shroud :End of /NAMES list"
+            //            break;
+            //        case "372":
+            //            //":tmi.twitch.tv 372 kv501k :You are in a maze of twisty passages, all alike."
+            //            break;
+            //        case "375":
+            //            //":tmi.twitch.tv 375 kv501k :-"
+            //            break;
+            //        case "376":
+            //            //":tmi.twitch.tv 376 kv501k :>"
+            //            break;
+            //        default:
+            //            Debug.WriteLine($"Twitch unknown command={result.Command}");
+            //            SendSystemInfo(result.Raw, InfoType.Debug);
+            //            throw new ParseException(result.Raw);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogException(ex, "", $"raw={result.Raw}");
+            //}
+        }
+        private TwitchComment OnPrivMsg(InternalMessages.PrivMsg privMsg)
+        {
+            var userId = privMsg.UserId;
+            var displayName = privMsg.DisplayName;
+            var isFirstComment = userId is not null ? _commentCounter.UpdateCount(userId) : false;
+            string? newNickname = null;
+            if (_siteOptions.NeedAutoSubNickname)
+            {
+                var nick = Utils.ExtractNickname(privMsg.Message, _siteOptions.NeedAutoSubNicknameStr);
+                if (!string.IsNullOrEmpty(nick))
+                {
+                    newNickname = nick;
                 }
             }
-            catch (Exception ex)
+            var message = new TwitchComment("")
             {
-                _logger.LogException(ex, "", $"raw={result.Raw}");
-            }
+                CommentItems = Tools.GetMessageItems(privMsg.Message, privMsg.Emotes),
+                Id = privMsg.Id,
+                UserName = privMsg.Username,
+                PostTime = privMsg.SentAt is not null ? privMsg.SentAt.Value.ToString("HH:mm:ss") : "",
+                UserId = privMsg.UserId,
+                IsDisplayNameSame = privMsg.Username == privMsg.DisplayName,
+                DisplayName = privMsg.DisplayName,
+            };
+            return message;
         }
-
         private void OnMessageReceived(Result result)
         {
-            var commentData = ParsePrivMsg(result);
+            var commentData = Tools.ParsePrivMsg(result);
             var userId = commentData.UserId;
             var displayName = commentData.DisplayName;
             var isFirstComment = _commentCounter.UpdateCount(userId);
@@ -376,13 +463,9 @@ namespace TwitchSitePlugin
             var messageContext = new TwitchMessageContext(message, userId, MessagePartFactory.CreateMessageItems(commentData.Username), newNickname, false);
             MessageReceived?.Invoke(this, messageContext);
         }
-        private void OnNoticeReceived(Result result)
+        private void OnNoticeReceived(InternalMessages.Notice internalNotice)
         {
-            var message = result.Params[1];
-            var notice = new TwitchNotice(result.Raw)
-            {
-                Message = message,
-            };
+            var notice = new TwitchNotice(internalNotice);
             var messageContext = new TwitchMessageContext(notice, null, null, null, false);
             MessageReceived?.Invoke(this, messageContext);
         }

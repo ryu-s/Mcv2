@@ -82,7 +82,7 @@ namespace TwitchSitePlugin
         }
         public static List<IMessagePart> GetMessageItems(Result result)
         {
-            string emotes;
+            string? emotes;
             if (result.Tags.ContainsKey("emotes"))
             {
                 emotes = result.Tags["emotes"];
@@ -111,7 +111,7 @@ namespace TwitchSitePlugin
             }
             return s;
         }
-        public static List<IMessagePart> GetMessageItems(string message, string emotes)
+        public static List<IMessagePart> GetMessageItems(string message, string? emotes)
         {
             if (string.IsNullOrEmpty(emotes))
             {

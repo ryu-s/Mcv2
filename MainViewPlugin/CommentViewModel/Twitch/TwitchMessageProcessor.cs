@@ -23,6 +23,9 @@ class TwitchMessageProcessor : ILiveSiteMessageProcessor
                 case ITwitchNotice twitchNotice:
                     vm = new McvTwitchNoticedViewModel(twitchNotice, connName, options, user);
                     break;
+                case ITwitchUserNotice twitchUserNotice:
+                    vm = new McvTwitchUserNoticedViewModel(twitchUserNotice, connName, options, user);
+                    break;
                 default:
                     break;
             }
