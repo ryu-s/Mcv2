@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Mcv.Core.CoreActorMessages;
 using Mcv.Core.PluginActorMessages;
+using Mcv.Core.PluginLoader;
 using Mcv.Core.V1;
 using Mcv.PluginV2;
 using Mcv.PluginV2.Messages;
@@ -124,7 +125,7 @@ class McvCoreActor : ReceiveActor
     Thread _splashThread;
     SplashWindow _splashWindow;
     SplashWindowViewModel _splashVm;
-    public McvCoreActor(ICoreLogger logger)
+    public McvCoreActor(IPluginLoader pluginLoader, ICoreLogger logger)
     {
         //System.Data.SQLite.Coreのバージョンが1.0.118のの時にSingleFileでPublishするとNullReferenceExceptionが発生する。
         //下記コードを追加することで回避できるらしい。
@@ -180,7 +181,7 @@ class McvCoreActor : ReceiveActor
         {
             try
             {
-                await InitializeAsync();
+                await InitializeAsync(pluginLoader);
             }
             catch (Exception ex)
             {
@@ -547,7 +548,7 @@ class McvCoreActor : ReceiveActor
     {
         return Path.Combine(_coreOptions.SettingsDirPath, filename);
     }
-    internal async Task<bool> InitializeAsync()
+    internal async Task<bool> InitializeAsync(IPluginLoader pluginLoader)
     {
         _splashVm.AddLog("初期化開始");
         try
@@ -590,7 +591,8 @@ class McvCoreActor : ReceiveActor
 
         _splashVm.AddLog("プラグインの読み込み");
         var pluginHost = new PluginHost(this);
-        var plugins = PluginLoader.LoadPlugins(_coreOptions.PluginDir, _logger);
+        var pluginDirPath = Path.Combine(GetAppDirPath(), _coreOptions.PluginDir);
+        var plugins = pluginLoader.LoadPlugins(pluginDirPath);
         AddPlugins(plugins, pluginHost);
 
         //var options = LoadOptions(GetOptionsPath(), logger);
@@ -792,8 +794,8 @@ class McvCoreActor : ReceiveActor
         SetMessageToPluginManager(target, message);
         await Task.CompletedTask;
     }
-    public static Props Props(ICoreLogger logger)
+    public static Props Props(IPluginLoader pluginLoader, ICoreLogger logger)
     {
-        return Akka.Actor.Props.Create(() => new McvCoreActor(logger)).WithDispatcher("akka.actor.synchronized-dispatcher");
+        return Akka.Actor.Props.Create(() => new McvCoreActor(pluginLoader, logger)).WithDispatcher("akka.actor.synchronized-dispatcher");
     }
 }

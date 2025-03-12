@@ -1,16 +1,21 @@
-﻿using System;
+﻿using Mcv.PluginV2;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Mcv.PluginV2;
 
-namespace Mcv.Core;
-
-static class PluginLoader
+namespace Mcv.Core.PluginLoader;
+class PluginLoader : IPluginLoader
 {
+    private readonly ICoreLogger _logger;
+
+    public PluginLoader(ICoreLogger logger)
+    {
+        _logger = logger;
+    }
     private static bool IsValidPluginFileName(string filePath)
     {
         return filePath.EndsWith("Plugin.dll") && filePath is not "Plugin.dll" && filePath is not "McvPlugin.dll";
@@ -30,7 +35,7 @@ static class PluginLoader
         }
         return null;
     }
-    public static List<IPlugin> LoadPlugins(string pluginsDir, ICoreLogger logger)
+    public List<IPlugin> LoadPlugins(string pluginsDir)
     {
         var pluginDirs = Directory.GetDirectories(pluginsDir);
         var plugins = new List<IPlugin>();
@@ -47,7 +52,7 @@ static class PluginLoader
                 }
                 catch (Exception ex)
                 {
-                    logger.AddLog(ex);
+                    _logger.AddLog(ex);
                     Debug.WriteLine(ex.Message);
                 }
             }

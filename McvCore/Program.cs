@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Mcv.Core.CoreActorMessages;
+using Mcv.Core.PluginLoader;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -43,7 +44,7 @@ class Program
         var monitorActor = actorSystem.ActorOf<UnhandledMessagesMonitorActor>();
         actorSystem.EventStream.Subscribe(monitorActor, typeof(Akka.Event.UnhandledMessage));
 
-        var actor = actorSystem.ActorOf(McvCoreActor.Props(_logger), "coreActor");
+        var actor = actorSystem.ActorOf(McvCoreActor.Props(new PluginLoaderV2(_logger), _logger), "coreActor");
 
 
         var t = actorSystem.WhenTerminated;
