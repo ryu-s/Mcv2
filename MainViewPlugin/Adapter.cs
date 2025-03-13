@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Net;
 
 namespace Mcv.MainViewPlugin
 {
@@ -141,14 +142,75 @@ namespace Mcv.MainViewPlugin
     {
         public IUpdateProgressData Data { get; } = data;
     }
+    class BrowserProfilesManager
+    {
+        public event EventHandler<BrowserAddedEventArgs>? BrowserAdded;
+        public event EventHandler<BrowserRemovedEventArgs>? BrowserRemoved;
+        private readonly BrowserProfileId _emptyBrowserProfileId = new(Guid.NewGuid());
+        //空にしない。ブラウザが無い時は_emptyBrowserViewModelを必ず入れる。
+        private readonly ConcurrentDictionary<BrowserProfileId, ProfileInfo> _browserProfileDict = new();
+        private readonly ProfileInfo _emptyBrowserProfileInfo;
+
+        public BrowserProfileId EmptyBrowserProfileId => _emptyBrowserProfileId;
+
+        public void Add(ProfileInfo browserProfileInfo)
+        {
+            if (_browserProfileDict.ContainsKey(_emptyBrowserProfileId))
+            {
+                _browserProfileDict.Remove(_emptyBrowserProfileId, out var _);
+                BrowserRemoved?.Invoke(this, new BrowserRemovedEventArgs(_emptyBrowserProfileId));
+            }
+            _browserProfileDict.TryAdd(browserProfileInfo.ProfileId, browserProfileInfo);
+
+            BrowserAdded?.Invoke(this, new BrowserAddedEventArgs(browserProfileInfo.ProfileId, browserProfileInfo.BrowserName, browserProfileInfo.ProfileName));
+        }
+        public void Remove(BrowserProfileId browserProfileId)
+        {
+            _browserProfileDict.Remove(browserProfileId, out var _);
+            if (_browserProfileDict.Count == 0)
+            {
+                _browserProfileDict.TryAdd(_emptyBrowserProfileId, _emptyBrowserProfileInfo);
+                BrowserAdded?.Invoke(this, new BrowserAddedEventArgs(_emptyBrowserProfileId, _emptyBrowserProfileInfo.BrowserName, _emptyBrowserProfileInfo.ProfileName));
+            }
+            BrowserRemoved?.Invoke(this, new BrowserRemovedEventArgs(browserProfileId));
+        }
+        public BrowserProfilesManager()
+        {
+            _emptyBrowserProfileInfo = new ProfileInfo(new PluginId(Guid.NewGuid()), "(未選択)", null, _emptyBrowserProfileId);
+
+        }
+
+        internal BrowserProfileId GetDefaultBrowser()
+        {
+            return _browserProfileDict.Values.ToList()[0].ProfileId;
+        }
+
+        internal ProfileInfo GetBrowserProfile(BrowserProfileId browserProfileId)
+        {
+            return _browserProfileDict[browserProfileId];
+        }
+
+        internal void AddEmptyBrowserProfile()
+        {
+            Add(_emptyBrowserProfileInfo);
+        }
+    }
     class Adapter : IMainViewHostAdapter, IPluginMainHost
     {
         public event EventHandler<ConnectionAddedEventArgs>? ConnectionAdded;
         public event EventHandler<ConnectionRemovedEventArgs>? ConnectionRemoved;
         public event EventHandler<ConnectionStatusChangedEventArgs>? ConnectionStatusChanged;
         public event EventHandler<SiteAddedEventArgs>? SiteAdded;
-        public event EventHandler<BrowserAddedEventArgs>? BrowserAdded;
-        public event EventHandler<BrowserRemovedEventArgs>? BrowserRemoved;
+        public event EventHandler<BrowserAddedEventArgs>? BrowserAdded
+        {
+            add => _browserProfilesManager.BrowserAdded += value;
+            remove => _browserProfilesManager.BrowserAdded -= value;
+        }
+        public event EventHandler<BrowserRemovedEventArgs>? BrowserRemoved
+        {
+            add => _browserProfilesManager.BrowserRemoved += value;
+            remove => _browserProfilesManager.BrowserRemoved -= value;
+        }
         public event EventHandler<MessageReceivedEventArgs>? MessageReceived;
         public event EventHandler<MetadataUpdatedEventArgs>? MetadataUpdated;
         public event EventHandler<SelectedSiteChangedEventArgs>? SelectedSiteChanged;
@@ -158,8 +220,8 @@ namespace Mcv.MainViewPlugin
         public event EventHandler<UpdateProgressChangedEventArgs>? UpdateProgressChanged;
         public event EventHandler<PluginAddedEventArgs>? PluginAdded;
 
-        private readonly BrowserProfileId _emptyBrowserProfileId = new(Guid.NewGuid());
         private readonly UserStore _userStore = new();
+
         public MyUser GetUser(string userId)
         {
             return _userStore.GetUser(userId);
@@ -246,11 +308,11 @@ namespace Mcv.MainViewPlugin
         }
         private BrowserProfileId GetDefaultBrowser()
         {
-            return _browserProfileDict.Values.ToList()[0].ProfileId;
+            return _browserProfilesManager.GetDefaultBrowser();
         }
         public void AddEmptyBrowserProfile()
         {
-            AddBrowserProfile(_emptyBrowserProfileInfo);
+            _browserProfilesManager.AddEmptyBrowserProfile();
         }
 
         //public double ThumbnailWidth { get { return _options.ThumbnailWidth; } set { _options.ThumbnailWidth = value; } }
@@ -667,13 +729,22 @@ namespace Mcv.MainViewPlugin
             {
                 throw new Exception("bug");
             }
-            var profile = _browserProfileDict[browserProfileId];
-            var res = await _host.RequestMessageAsync(new GetDirectMessage(profile.PluginId, new GetCookies(browserProfileId, resDomain.Domain))) as ReplyCookies;
-            if (res is null)
+            List<Cookie> cookies;
+            if (browserProfileId == _browserProfilesManager.EmptyBrowserProfileId)
             {
-                throw new Exception("bug");
+                cookies = [];
             }
-            await _host.SetMessageAsync(new SetDirectMessage(selectedSite, new SetConnectSite(connId, input, res.Cookies)));
+            else
+            {
+                var profile = _browserProfilesManager.GetBrowserProfile(browserProfileId);
+                var res = await _host.RequestMessageAsync(new GetDirectMessage(profile.PluginId, new GetCookies(browserProfileId, resDomain.Domain))) as ReplyCookies;
+                if (res is null)
+                {
+                    throw new Exception("bug");
+                }
+                cookies = res.Cookies;
+            }
+            await _host.SetMessageAsync(new SetDirectMessage(selectedSite, new SetConnectSite(connId, input, cookies)));
         }
         public Task SetDisconectSiteAsync(PluginId selectedSite, ConnectionId connId)
         {
@@ -681,40 +752,23 @@ namespace Mcv.MainViewPlugin
         }
         public void AddBrowserProfile(ProfileInfo browserProfileInfo)
         {
-            if (_browserProfileDict.ContainsKey(_emptyBrowserProfileId))
-            {
-                _browserProfileDict.Remove(_emptyBrowserProfileId, out var _);
-                BrowserRemoved?.Invoke(this, new BrowserRemovedEventArgs(_emptyBrowserProfileId));
-            }
-            _browserProfileDict.TryAdd(browserProfileInfo.ProfileId, browserProfileInfo);
-
-            BrowserAdded?.Invoke(this, new BrowserAddedEventArgs(browserProfileInfo.ProfileId, browserProfileInfo.BrowserName, browserProfileInfo.ProfileName));
+            _browserProfilesManager.Add(browserProfileInfo);
         }
         public void RemoveBrowserProfile(BrowserProfileId browserProfileId)
         {
-            _browserProfileDict.Remove(browserProfileId, out var _);
-            if (_browserProfileDict.Count == 0)
-            {
-                _browserProfileDict.TryAdd(_emptyBrowserProfileId, _emptyBrowserProfileInfo);
-                BrowserAdded?.Invoke(this, new BrowserAddedEventArgs(_emptyBrowserProfileId, _emptyBrowserProfileInfo.BrowserName, _emptyBrowserProfileInfo.ProfileName));
-            }
-            BrowserRemoved?.Invoke(this, new BrowserRemovedEventArgs(browserProfileId));
+            _browserProfilesManager.Remove(browserProfileId);
         }
-        //空にしない。ブラウザが無い時は_emptyBrowserViewModelを必ず入れる。
-        private readonly ConcurrentDictionary<BrowserProfileId, ProfileInfo> _browserProfileDict = new();
         public IMainViewPluginOptions Options { get; }
         private readonly IPluginHost _host;
 
         //private readonly IMainViewActor _mainActor;
-
+        private readonly BrowserProfilesManager _browserProfilesManager = new();
         public Adapter(IPluginHost host, IMainViewPluginOptions options)
         {
             Options = options;
             _host = host;
-            _emptyBrowserProfileInfo = new ProfileInfo(new PluginId(Guid.NewGuid()), "(未選択)", null, _emptyBrowserProfileId);
             _userStore.UserAdded += UserStore_UserAdded;
         }
-        private readonly ProfileInfo _emptyBrowserProfileInfo;
         private void UserStore_UserAdded(object? sender, UserAddedEventArgs e)
         {
             UserAdded?.Invoke(this, e);
