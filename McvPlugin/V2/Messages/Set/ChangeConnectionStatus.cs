@@ -8,6 +8,13 @@
         }
 
         public IConnectionStatusDiff ConnStDiff { get; }
+        public string Raw
+        {
+            get
+            {
+                return "";
+            }
+        }
     }
     public class NotifyConnectionStatusChanged : INotifyMessageV2
     {

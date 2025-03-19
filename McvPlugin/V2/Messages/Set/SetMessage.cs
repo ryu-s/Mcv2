@@ -14,7 +14,6 @@ public class SetMessage : ISetMessageToCoreV2
         NewNickname = newNickname;
         IsInitialComment = isInitialComment;
     }
-
     public ConnectionId ConnId { get; }
     public PluginId SiteId { get; }
     public ISiteMessage Message { get; }
@@ -22,6 +21,13 @@ public class SetMessage : ISetMessageToCoreV2
     public IEnumerable<IMessagePart>? Username { get; }
     public string? NewNickname { get; }
     public bool IsInitialComment { get; }
+    public string Raw
+    {
+        get
+        {
+            return "";
+        }
+    }
 }
 public class NotifyMessageReceived : INotifyMessageV2
 {

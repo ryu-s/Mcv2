@@ -1,3 +1,6 @@
 ﻿namespace Mcv.PluginV2.Messages;
 
-public class SetCloseApp : ISetMessageToCoreV2 { }
+public record SetCloseApp : ISetMessageToCoreV2
+{
+    public string Raw => $"{{\"type\":\"set\",\"set\":\"close_app\"}}";
+}

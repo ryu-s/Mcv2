@@ -8,6 +8,13 @@
         }
 
         public ConnectionId ConnId { get; }
+        public string Raw
+        {
+            get
+            {
+                return "";
+            }
+        }
     }
     public class NotifyConnectionRemoved : INotifyMessageV2
     {

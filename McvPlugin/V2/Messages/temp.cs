@@ -2,4 +2,7 @@
 
 namespace Mcv.PluginV2;
 
-public record SetException(Exception Ex, string Message, string Details) : ISetMessageToCoreV2;
+public record SetException(Exception Ex, string Message, string Details) : ISetMessageToCoreV2
+{
+    public string Raw => $"{{\"type\":\"set\",\"set\":\"exception\",\"message\":\"{Message}\",\"details\":\"{Details}\"}}";
+}
