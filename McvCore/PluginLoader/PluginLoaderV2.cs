@@ -21,39 +21,13 @@ class PluginLoaderV2 : IPluginLoader
     {
         var loadContext = new PluginLoadContext(pluginPath);
         var assembly = loadContext.LoadFromAssemblyPath(pluginPath);
-        if (pluginPath.Contains("MainView"))
-        {
-
-        }
         foreach (Type type in assembly.GetExportedTypes())
         {
-            if (pluginPath.Contains("MainView") && type.Name.Contains("PluginMain"))
-            {
-
-            }
-            var a = typeof(IPlugin).IsAssignableFrom(type);
-            var b = type.IsAbstract;
             if (typeof(IPlugin).IsAssignableFrom(type) && !type.IsAbstract)
             {
-                loadContext.Resolving += (sender, args) =>
-                {
-
-                    return null;
-                };
-                assembly.ModuleResolve += (sender, args) =>
-                {
-                    var assemblyName = new AssemblyName(args.Name);
-                    //var assemblyPath = loadContext.ResolveUnmanagedDllToPath(assemblyName.Name + ".dll");
-                    //if (assemblyPath != null)
-                    //{
-                    //    return loadContext.LoadFromAssemblyPath(assemblyPath);
-                    //}
-                    return null;
-                };
                 return Activator.CreateInstance(type) as IPlugin;
             }
         }
-
         return null;
     }
 
