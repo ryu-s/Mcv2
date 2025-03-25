@@ -45,6 +45,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mcv.BigoIF\Mcv.BigoIF.csproj" />
-    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
   </ItemGroup>
 </Project>

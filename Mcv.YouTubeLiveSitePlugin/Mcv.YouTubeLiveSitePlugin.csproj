@@ -44,7 +44,6 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
     <ProjectReference Include="..\Mcv.YouTubeLiveIF\Mcv.YouTubeLiveIF.csproj" />
     <ProjectReference Include="..\YouTubeLiveMessageParser\YouTubeLiveMessageParserIF\YouTubeLiveMessageParserIF.csproj" />
     <ProjectReference Include="..\YouTubeLiveMessageParser\YouTubeLiveMessageParser\YouTubeLiveMessageParser.csproj" />

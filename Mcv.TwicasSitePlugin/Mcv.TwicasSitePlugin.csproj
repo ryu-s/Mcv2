@@ -44,7 +44,6 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
     <ProjectReference Include="..\Mcv.TwicasIF\Mcv.TwicasIF.csproj" />
   </ItemGroup>
 </Project>

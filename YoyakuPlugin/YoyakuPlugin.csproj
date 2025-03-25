@@ -59,7 +59,6 @@
     <ProjectReference Include="..\Mcv.TwitchIF\Mcv.TwitchIF.csproj" />
     <ProjectReference Include="..\Mcv.WhowatchIF\Mcv.WhowatchIF.csproj" />
     <ProjectReference Include="..\Mcv.YouTubeLiveIF\Mcv.YouTubeLiveIF.csproj" />
-    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
   </ItemGroup>
 
 </Project>

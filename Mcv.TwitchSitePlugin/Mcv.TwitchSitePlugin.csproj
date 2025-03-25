@@ -46,7 +46,6 @@
     <PackageReference Include="WebSocket4Net" Version="0.15.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\McvPlugin\McvPlugin.csproj" />
     <ProjectReference Include="..\Mcv.TwitchIF\Mcv.TwitchIF.csproj" />
   </ItemGroup>
 </Project>
