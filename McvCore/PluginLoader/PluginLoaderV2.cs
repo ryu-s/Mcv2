@@ -19,7 +19,12 @@ class PluginLoaderV2 : IPluginLoader
 
     private static IPlugin? LoadPlugin(string pluginPath)
     {
-        var loadContext = new PluginLoadContext(pluginPath);
+        //プラグインを異なるAssemblyLoadContextに読み込みたい。
+        //各プラグインのPluginMainクラスがIPluginを実装しているが、Pluginを読み込む処理で
+        //typeof(IPlugin).IsAssignableFrom(type)がfalseになってしまい意図した処理ができない。
+        //そこで、一時的に全てのプラグインをDefaultのAssemblyLoadContextに読み込むようにしている。
+        //var loadContext = new PluginLoadContext(pluginPath);
+        var loadContext = PluginLoadContext.Default;
         var assembly = loadContext.LoadFromAssemblyPath(pluginPath);
         foreach (Type type in assembly.GetExportedTypes())
         {
