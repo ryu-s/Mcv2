@@ -11,7 +11,7 @@ public class LoggerTests
         var data = new Data(ex);
         var json = data.ToJson();
         var restoredData = Data.FromJson(json);
-        Assert.AreEqual(data.DataTypeName, restoredData?.DataTypeName);
-        Assert.AreEqual(data.Content, restoredData?.Content);
+        Assert.That(data.DataTypeName, Is.EqualTo(restoredData?.DataTypeName));
+        Assert.That(data.Content, Is.EqualTo(restoredData?.Content));
     }
 }
